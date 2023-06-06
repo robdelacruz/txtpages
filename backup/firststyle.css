@@ -1,0 +1,68 @@
+/*
+Other colors:
+
+    color: rgb(229,231,235);
+    background-color: rgb(31,41,55);
+
+    color: rgb(229,231,235);
+    color: rgb(156,163,175);
+    background-color: #000;
+*/
+
+html {
+    padding-bottom: 4em;
+}
+.dark {
+    color: rgb(156,163,175);
+    background-color: rgb(17,24,39);
+}
+.dark input, .dark textarea {
+    background-color: rgb(31,41,55);
+    color: #fff;
+    color: rgb(156,163,175);
+}
+.green {
+    color: rgb(16,185,129);
+    color: rgb(5,150,105);
+    color: rgb(52,211,153);
+    color: rgb(110,231,183);
+    color: rgb(16,185,129);
+    background-color: #000;
+}
+.green input, .green textarea {
+    background-color: rgb(31,41,55);
+    background-color: #000;
+    background-color: rgb(17,24,39);
+    color: #fff;
+    color: rgb(156,163,175);
+    color: rgb(16,185,129);
+}
+
+body {
+    font-family: sans-serif;
+    line-height: 1.5em;
+    max-width: 40em;
+    padding: 0.2%;
+    margin: auto;
+
+    font-size: 1rem;
+    line-height: 1.5rem;
+}
+h1 {
+    font-size: 2rem;
+}
+h2, h3, h4, h5 {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+label {
+    display: block;
+}
+input, textarea {
+    display: block;
+    width: 100%;
+}
+textarea {
+    height: 200px;
+}
+

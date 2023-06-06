@@ -1,0 +1,31 @@
+Create a web page:
+- Title
+- Content
+- Custom URL
+- Custom edit code
+* Save
+
+Result:
+- Link to your page
+- Edit your page link
+- Edit code
+- Email this info to yourself
+* Email
+
+Web page:
+- Title (h1)
+- Content
+- Link to iota
+
+
+body{
+    margin:40px auto;
+    max-width:650px;
+    line-height:1.6;
+    font-size:18px;
+    color:#444;
+    padding:0 10px;
+}
+h1,h2,h3 { 
+    line-height:1.2;
+}

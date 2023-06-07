@@ -29,3 +29,14 @@ body{
 h1,h2,h3 { 
     line-height:1.2;
 }
+
+tables:
+CREATE TABLE page (
+    page_id     INTEGER PRIMARY KEY NOT NULL,
+    title       TEXT NOT NULL DEFAULT '',
+    url         TEXT NOT NULL DEFAULT '',
+    content     TEXT NOT NULL DEFAULT '',
+    editcode    TEXT NOT NULL DEFAULT '',
+    createdt    TEXT NOT NULL,
+    lastreaddt  TEXT NOT NULL
+);

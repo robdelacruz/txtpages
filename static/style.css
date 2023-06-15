@@ -14,7 +14,8 @@ body {
     max-width: 650px; 
     margin: 40px auto;
     padding: 0 10px;
-    font: 18px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    1font: 18px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     color: #444
 }
 h1, h2, h3 {
@@ -31,24 +32,34 @@ h1, h2, h3 {
     a:visited { 
         color: #8e96f0
     }
-    input, textarea {
-        color: inherit;
-        background: inherit;
-    }
 }
-form > div {
-    margin-bottom: 0.5rem;
+input, textarea, button {
+    color: inherit;
+    background: inherit;
+    font: inherit;
 }
-label {
+
+.jotiform > div {
+    margin: 0.5rem 0;
+}
+.jotiform label {
     display: block;
 }
-input, textarea {
+.jotiform input, .jotiform textarea {
     display: block;
     width: 100%;
 }
-textarea {
+.jotiform textarea {
     height: 200px;
 }
-button {
+.jotiform button {
+    padding: 0 1rem;
+}
+.jotiform_save {
+    padding: 1rem 0;
+    text-align: center;
+}
+.jotiform_save button {
+    font-weight: bold;
 }
 

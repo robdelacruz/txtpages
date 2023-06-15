@@ -1,13 +1,14 @@
 LIBSRC=db.go util.go web.go
 
-all: t
+all: joti
 
 dep:
-	go get -u github.com/mattn/go-sqlite3
+	go env -w GO111MODULE=auto
+	go get github.com/mattn/go-sqlite3
 
-t: t.go
-	go build -o t t.go $(LIBSRC)
+joti: joti.go
+	go build -o joti joti.go $(LIBSRC)
 
 clean:
-	rm -rf t
+	rm -rf joti
 

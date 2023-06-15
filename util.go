@@ -2,6 +2,7 @@ package main
 
 import (
 	"math/rand"
+	"os"
 	"strconv"
 	"time"
 )
@@ -53,4 +54,21 @@ func atof(s string) float64 {
 		return 0.0
 	}
 	return f
+}
+
+func ss_contains(ss []string, v string) bool {
+	for _, s := range ss {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+func file_exists(file string) bool {
+	_, err := os.Stat(file)
+	if err != nil && os.IsNotExist(err) {
+		return false
+	}
+	return true
 }

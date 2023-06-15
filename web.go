@@ -74,33 +74,20 @@ func logErr(sfunc string, err error) {
 }
 
 //*** HTML template functions ***
-func printHtmlOpen(P PrintFunc, title string, jsurls []string) {
+func html_print_open(P PrintFunc, title string) {
 	P("<!DOCTYPE html>\n")
 	P("<html>\n")
 	P("<head>\n")
 	P("<meta charset=\"utf-8\">\n")
 	P("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
 	P("<title>%s</title>\n", title)
-	P("<link rel=\"icon\" href=\"/static/currency-dollar.svg\">\n")
 	P("<link rel=\"stylesheet\" type=\"text/css\" href=\"/static/style.css\">\n")
-	for _, jsurl := range jsurls {
-		P("<script defer src=\"%s\"></script>\n", jsurl)
-	}
-	P("<style>\n")
-	P(".myfont {font-family: Helvetica Neue,Helvetica,Arial,sans-serif;}\n")
-	P("</style>\n")
 	P("</head>\n")
-	//	P("<body class=\"bg-page text-xs p-2\">\n")
+	P("<body>\n")
 }
-func printHtmlClose(P PrintFunc) {
-	//	P("</body>\n")
+func html_print_close(P PrintFunc) {
+	P("</body>\n")
 	P("</html>\n")
-}
-func printContainerOpen(P PrintFunc) {
-	P("<div id=\"container\" class=\"\">\n")
-}
-func printContainerClose(P PrintFunc) {
-	P("</div>\n")
 }
 
 //*** Cookie functions ***

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -79,8 +80,6 @@ Initialize db file:
 func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
 	var p JotiPage
 
-	P := makePrintFunc(w)
-
 	if r.Method == "POST" {
 		p.title = strings.TrimSpace(r.FormValue("title")) + " and more"
 		p.content = r.FormValue("content") + " plus more content"
@@ -89,6 +88,11 @@ func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html")
+	P := makePrintFunc(w)
+	print_joti_form(P, &p, "error occurred")
+}
+
+func print_joti_form(P PrintFunc, p *JotiPage, errmsg string) {
 	html_print_open(P, "joti")
 	P("<h1><a href=\"/\">joti</a></h1>\n")
 	P("<p>Simple text web pages</p>\n")
@@ -98,6 +102,11 @@ func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
 	P("</p>\n")
 	P("<h2>Create a joti webpage</h2>\n")
 	P("<form class=\"jotiform\" method=\"post\" action=\"/\">\n")
+	if errmsg != "" {
+		P("    <div class=\"jotiform_error\">\n")
+		P("        <p>%s</p>\n", errmsg)
+		P("    </div>\n")
+	}
 	P("    <div>\n")
 	P("        <label for=\"title\">Title</label>\n")
 	P("        <input id=\"title\" name=\"title\" value=\"%s\">\n", escape(p.title))
@@ -119,6 +128,25 @@ func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
 	P("    </div>\n")
 	P("</form>\n")
 	html_print_close(P)
+}
+
+func create_jotipage(db *sql.DB, p *JotiPage) (int64, error) {
+	if p.createdt == "" {
+		p.createdt = time.Now().Format(time.RFC3339)
+	}
+	if p.lastreaddt == "" {
+		p.lastreaddt = p.createdt
+	}
+	s := "INSERT INTO page (title, url, content, editcode) VALUES (?, ?, ?, ?)"
+	result, err := sqlexec(db, s, p.title, p.url, p.content, p.editcode)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
 }
 
 const (
@@ -169,8 +197,8 @@ func create_tables(dbfile string) error {
 	}
 
 	ss := []string{
-		"CREATE TABLE page (page_id INTEGER PRIMARY KEY NOT NULL, title TEXT NOT NULL DEFAULT '', url TEXT NOT NULL DEFAULT '', content TEXT NOT NULL DEFAULT '', editcode TEXT NOT NULL DEFAULT '', createdt TEXT NOT NULL, lastreaddt TEXT NOT NULL);",
-		`INSERT INTO page (page_id, title, url, content, editcode, createdt, lastreaddt) VALUES(1, "First Post!", "firstpost", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", "password", strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), strftime('%Y-%m-%dT%H:%M:%SZ', 'now'));`,
+		"CREATE TABLE jotipage (jotipage_id INTEGER PRIMARY KEY NOT NULL, title TEXT NOT NULL DEFAULT '', url TEXT NOT NULL DEFAULT '', content TEXT NOT NULL DEFAULT '', editcode TEXT NOT NULL DEFAULT '', createdt TEXT NOT NULL, lastreaddt TEXT NOT NULL);",
+		`INSERT INTO jotipage (jotipage_id, title, url, content, editcode, createdt, lastreaddt) VALUES(1, "First Post!", "firstpost", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", "password", strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), strftime('%Y-%m-%dT%H:%M:%SZ', 'now'));`,
 	}
 
 	tx, err := db.Begin()

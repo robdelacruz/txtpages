@@ -32,6 +32,9 @@ h1, h2, h3 {
     a:visited { 
         color: #8e96f0
     }
+    .jotiform_error {
+        color: black;
+    }
 }
 input, textarea, button {
     color: inherit;
@@ -61,5 +64,11 @@ input, textarea, button {
 }
 .jotiform_save button {
     font-weight: bold;
+}
+.jotiform_error {
+    font-weight: bold;
+    background-color: lightgray;
+    border: 1px solid;
+    text-align: center;
 }
 

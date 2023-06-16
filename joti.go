@@ -79,17 +79,42 @@ Initialize db file:
 
 func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
 	var p JotiPage
+	var errmsg string
 
 	if r.Method == "POST" {
 		p.title = strings.TrimSpace(r.FormValue("title")) + " and more"
 		p.content = r.FormValue("content") + " plus more content"
 		p.url = strings.TrimSpace(r.FormValue("url"))
 		p.editcode = strings.TrimSpace(r.FormValue("editcode"))
+
+		for {
+			if p.title == "" {
+				errmsg = "Please enter a title"
+				break
+			}
+			if p.content == "" {
+				errmsg = "Please enter content"
+				break
+			}
+			if p.url == "" {
+				errmsg = "Please enter a url"
+				break
+			}
+
+			_, err := create_jotipage(server.db, &p)
+			if err != nil {
+				errmsg = err.Error()
+				break
+			}
+
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "text/html")
 	P := makePrintFunc(w)
-	print_joti_form(P, &p, "error occurred")
+	print_joti_form(P, &p, errmsg)
 }
 
 func print_joti_form(P PrintFunc, p *JotiPage, errmsg string) {
@@ -137,8 +162,8 @@ func create_jotipage(db *sql.DB, p *JotiPage) (int64, error) {
 	if p.lastreaddt == "" {
 		p.lastreaddt = p.createdt
 	}
-	s := "INSERT INTO page (title, url, content, editcode) VALUES (?, ?, ?, ?)"
-	result, err := sqlexec(db, s, p.title, p.url, p.content, p.editcode)
+	s := "INSERT INTO jotipage (title, url, content, editcode, createdt, lastreaddt) VALUES (?, ?, ?, ?, ?, ?)"
+	result, err := sqlexec(db, s, p.title, p.url, p.content, p.editcode, p.createdt, p.lastreaddt)
 	if err != nil {
 		return 0, err
 	}

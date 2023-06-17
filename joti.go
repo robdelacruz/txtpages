@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"strings"
@@ -66,6 +67,8 @@ Initialize db file:
 		fmt.Printf("Error opening '%s' (%s)\n", cfg.dbfile, err)
 		os.Exit(1)
 	}
+
+	rand.Seed(time.Now().UnixNano())
 
 	server := Server{db, &cfg}
 
@@ -156,15 +159,18 @@ func print_joti_form(P PrintFunc, p *JotiPage, errmsg string) {
 }
 
 func print_create_page_success(P PrintFunc, p *JotiPage, r *http.Request) {
-	page_link := fmt.Sprintf("%s/%s", r.Host, p.url)
-	edit_page_link := fmt.Sprintf("%s/%s/edit", r.Host, p.url)
+	href_link := fmt.Sprintf("/%s", p.url)
+	edit_href_link := fmt.Sprintf("/%s/edit", p.url)
+
+	page_name := fmt.Sprintf("%s/%s", r.Host, p.url)
+	edit_page_name := fmt.Sprintf("%s/%s/edit", r.Host, p.url)
 
 	html_print_open(P, "Success")
 	P("<h2>You made a page.</h2>\n")
 	P("<p>The link to your page is here:</p>\n")
-	P("<p><a href=\"%s\">%[1]s</a></p>", page_link)
+	P("<p><a href=\"%s\">%s</a></p>", href_link, page_name)
 	P("<p>Edit your page here:</p>\n")
-	P("<p><a href=\"%s\">%[1]s</a></p>", edit_page_link)
+	P("<p><a href=\"%s\">%s</a></p>", edit_href_link, edit_page_name)
 	P("<p>You will need this code to make changes to this page in the future:</p>\n")
 	P("<p>Your edit code: <b>%s</b></p>\n", p.editcode)
 	P("<p>You must keep this info safe (and bookmarking this page won't work). It cannot be accessed again!</p>\n")
@@ -179,6 +185,9 @@ func create_jotipage(db *sql.DB, p *JotiPage) (int64, error) {
 	if p.lastreaddt == "" {
 		p.lastreaddt = p.createdt
 	}
+	if p.editcode == "" {
+		p.editcode = random_editcode()
+	}
 	s := "INSERT INTO jotipage (title, url, content, editcode, createdt, lastreaddt) VALUES (?, ?, ?, ?, ?, ?)"
 	result, err := sqlexec(db, s, p.title, p.url, p.content, p.editcode, p.createdt, p.lastreaddt)
 	if err != nil {
@@ -189,6 +198,10 @@ func create_jotipage(db *sql.DB, p *JotiPage) (int64, error) {
 		return 0, err
 	}
 	return id, nil
+}
+
+func random_editcode() string {
+	return edit_words[rand.Intn(len(edit_words))]
 }
 
 const (

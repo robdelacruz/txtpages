@@ -81,9 +81,12 @@ func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
 	var p JotiPage
 	var errmsg string
 
+	w.Header().Set("Content-Type", "text/html")
+	P := makePrintFunc(w)
+
 	if r.Method == "POST" {
-		p.title = strings.TrimSpace(r.FormValue("title")) + " and more"
-		p.content = r.FormValue("content") + " plus more content"
+		p.title = strings.TrimSpace(r.FormValue("title"))
+		p.content = r.FormValue("content")
 		p.url = strings.TrimSpace(r.FormValue("url"))
 		p.editcode = strings.TrimSpace(r.FormValue("editcode"))
 
@@ -100,25 +103,22 @@ func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
 				errmsg = "Please enter a url"
 				break
 			}
-
-			_, err := create_jotipage(server.db, &p)
+			newid, err := create_jotipage(server.db, &p)
 			if err != nil {
-				errmsg = err.Error()
+				errmsg = "A server error occured."
 				break
 			}
-
-			http.Redirect(w, r, "/", http.StatusSeeOther)
+			p.jotipage_id = newid
+			print_create_page_success(P, &p, r)
 			return
 		}
 	}
 
-	w.Header().Set("Content-Type", "text/html")
-	P := makePrintFunc(w)
 	print_joti_form(P, &p, errmsg)
 }
 
 func print_joti_form(P PrintFunc, p *JotiPage, errmsg string) {
-	html_print_open(P, "joti")
+	html_print_open(P, "Create a page")
 	P("<h1><a href=\"/\">joti</a></h1>\n")
 	P("<p>Simple text web pages</p>\n")
 	P("<p>\n")
@@ -152,6 +152,23 @@ func print_joti_form(P PrintFunc, p *JotiPage, errmsg string) {
 	P("        <button type=\"submit\">Save</button>\n")
 	P("    </div>\n")
 	P("</form>\n")
+	html_print_close(P)
+}
+
+func print_create_page_success(P PrintFunc, p *JotiPage, r *http.Request) {
+	page_link := fmt.Sprintf("%s/%s", r.Host, p.url)
+	edit_page_link := fmt.Sprintf("%s/%s/edit", r.Host, p.url)
+
+	html_print_open(P, "Success")
+	P("<h2>You made a page.</h2>\n")
+	P("<p>The link to your page is here:</p>\n")
+	P("<p><a href=\"%s\">%[1]s</a></p>", page_link)
+	P("<p>Edit your page here:</p>\n")
+	P("<p><a href=\"%s\">%[1]s</a></p>", edit_page_link)
+	P("<p>You will need this code to make changes to this page in the future:</p>\n")
+	P("<p>Your edit code: <b>%s</b></p>\n", p.editcode)
+	P("<p>You must keep this info safe (and bookmarking this page won't work). It cannot be accessed again!</p>\n")
+	P("<p><a href=\"/\">joti home</a></p>\n")
 	html_print_close(P)
 }
 

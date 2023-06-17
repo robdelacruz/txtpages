@@ -81,6 +81,26 @@ Initialize db file:
 }
 
 func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
+	var joti_url string
+	var action string
+	ss := strings.Split(r.URL.Path, "/")
+	if len(ss) >= 2 {
+		joti_url = ss[1]
+	}
+	if len(ss) >= 3 {
+		action = ss[2]
+	}
+
+	if action == "edit" {
+		server.edit_handler(w, r, joti_url)
+	} else if joti_url != "" {
+		server.page_handler(w, r, joti_url)
+	} else {
+		server.new_handler(w, r)
+	}
+}
+
+func (server *Server) new_handler(w http.ResponseWriter, r *http.Request) {
 	var p JotiPage
 	var errmsg string
 
@@ -202,6 +222,64 @@ func create_jotipage(db *sql.DB, p *JotiPage) (int64, error) {
 
 func random_editcode() string {
 	return edit_words[rand.Intn(len(edit_words))]
+}
+
+func find_jotipage_by_url(db *sql.DB, url string) (*JotiPage, error) {
+	s := "SELECT jotipage_id, title, url, content, editcode, createdt, lastreaddt FROM jotipage WHERE url = ?"
+	row := db.QueryRow(s, url)
+	var jp JotiPage
+	err := row.Scan(&jp.jotipage_id, &jp.title, &jp.url, &jp.content, &jp.editcode, &jp.createdt, &jp.lastreaddt)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &jp, nil
+}
+
+func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, joti_url string) {
+	w.Header().Set("Content-Type", "text/html")
+	P := makePrintFunc(w)
+
+	html_print_open(P, "Edit")
+	P("<p>edit</p>\n")
+	html_print_close(P)
+}
+
+func (server *Server) page_handler(w http.ResponseWriter, r *http.Request, joti_url string) {
+	w.Header().Set("Content-Type", "text/html")
+	P := makePrintFunc(w)
+
+	jp, err := find_jotipage_by_url(server.db, joti_url)
+	if err != nil {
+		html_print_open(P, "Error")
+		P("<p>Error retrieving joti page:</p>\n")
+		P("<p>%s</p>\n", err.Error())
+		html_print_close(P)
+		return
+	}
+	if jp == nil {
+		html_print_open(P, "Not Found")
+		P("<p>Page not found</p>\n")
+		html_print_close(P)
+		return
+	}
+	print_joti_page(P, jp)
+}
+
+func print_joti_page(P PrintFunc, jp *JotiPage) {
+	html_print_open(P, "Joti page")
+	html_str, err := md_to_html(nil, []byte(jp.content))
+	if err != nil {
+		P("<p>Error converting joti page:</p>\n")
+		P("<p>%s</p>\n", err.Error())
+		html_print_close(P)
+		return
+	}
+
+	P("%s\n", html_str)
+	html_print_close(P)
 }
 
 const (

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 	"html"
@@ -8,6 +9,9 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
 )
 
 type PrintFunc func(format string, a ...interface{}) (n int, err error)
@@ -81,6 +85,7 @@ func html_print_open(P PrintFunc, title string) {
 	P("<meta charset=\"utf-8\">\n")
 	P("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
 	P("<title>%s</title>\n", title)
+	P("<link rel=\"icon\" href=\"/static/news-paper.svg\">\n")
 	P("<link rel=\"stylesheet\" type=\"text/css\" href=\"/static/style.css\">\n")
 	P("</head>\n")
 	P("<body>\n")
@@ -115,4 +120,22 @@ func readCookie(r *http.Request, name string) string {
 		return ""
 	}
 	return c.Value
+}
+
+func create_goldmark_interface() goldmark.Markdown {
+	return goldmark.New(
+		goldmark.WithExtensions(extension.GFM),
+	)
+}
+
+func md_to_html(gmd goldmark.Markdown, markdown_bytes []byte) (string, error) {
+	if gmd == nil {
+		gmd = create_goldmark_interface()
+	}
+	var buf bytes.Buffer
+	err := gmd.Convert(markdown_bytes, &buf)
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }

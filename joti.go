@@ -24,16 +24,6 @@ type Server struct {
 	cfg *Config
 }
 
-type JotiPage struct {
-	jotipage_id int64
-	title       string
-	url         string
-	content     string
-	editcode    string
-	createdt    string
-	lastreaddt  string
-}
-
 func main() {
 	var err error
 
@@ -198,46 +188,6 @@ func print_create_page_success(P PrintFunc, p *JotiPage, r *http.Request) {
 	html_print_close(P)
 }
 
-func create_jotipage(db *sql.DB, p *JotiPage) (int64, error) {
-	if p.createdt == "" {
-		p.createdt = time.Now().Format(time.RFC3339)
-	}
-	if p.lastreaddt == "" {
-		p.lastreaddt = p.createdt
-	}
-	if p.editcode == "" {
-		p.editcode = random_editcode()
-	}
-	s := "INSERT INTO jotipage (title, url, content, editcode, createdt, lastreaddt) VALUES (?, ?, ?, ?, ?, ?)"
-	result, err := sqlexec(db, s, p.title, p.url, p.content, p.editcode, p.createdt, p.lastreaddt)
-	if err != nil {
-		return 0, err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
-}
-
-func random_editcode() string {
-	return edit_words[rand.Intn(len(edit_words))]
-}
-
-func find_jotipage_by_url(db *sql.DB, url string) (*JotiPage, error) {
-	s := "SELECT jotipage_id, title, url, content, editcode, createdt, lastreaddt FROM jotipage WHERE url = ?"
-	row := db.QueryRow(s, url)
-	var jp JotiPage
-	err := row.Scan(&jp.jotipage_id, &jp.title, &jp.url, &jp.content, &jp.editcode, &jp.createdt, &jp.lastreaddt)
-	if err == sql.ErrNoRows {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &jp, nil
-}
-
 func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, joti_url string) {
 	w.Header().Set("Content-Type", "text/html")
 	P := makePrintFunc(w)
@@ -317,37 +267,4 @@ func parse_args(args []string, cfg *Config) {
 	if !port_set {
 		cfg.port = "8000"
 	}
-}
-
-func create_tables(dbfile string) error {
-	if file_exists(dbfile) {
-		return fmt.Errorf("File '%s' exists", dbfile)
-	}
-
-	db, err := sql.Open("sqlite3", dbfile)
-	if err != nil {
-		return err
-	}
-
-	ss := []string{
-		"CREATE TABLE jotipage (jotipage_id INTEGER PRIMARY KEY NOT NULL, title TEXT NOT NULL DEFAULT '', url TEXT NOT NULL DEFAULT '', content TEXT NOT NULL DEFAULT '', editcode TEXT NOT NULL DEFAULT '', createdt TEXT NOT NULL, lastreaddt TEXT NOT NULL);",
-		`INSERT INTO jotipage (jotipage_id, title, url, content, editcode, createdt, lastreaddt) VALUES(1, "First Post!", "firstpost", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", "password", strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), strftime('%Y-%m-%dT%H:%M:%SZ', 'now'));`,
-	}
-
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	for _, s := range ss {
-		_, err := txexec(tx, s)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-	return nil
 }

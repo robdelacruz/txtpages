@@ -1,4 +1,4 @@
-PROGSRC=joti.go editwords.go
+PROGSRC=joti.go editwords.go dbdata.go
 LIBSRC=db.go util.go web.go
 
 all: joti t

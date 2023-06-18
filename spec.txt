@@ -40,3 +40,5 @@ CREATE TABLE page (
     createdt    TEXT NOT NULL,
     lastreaddt  TEXT NOT NULL
 );
+
+https://webdesign.tutsplus.com/tutorials/html5-form-validation-with-the-pattern-attribute--cms-25145

@@ -19,6 +19,31 @@ type JotiPage struct {
 	lastreaddt  string
 }
 
+type Z int
+
+const (
+	Z_OK Z = iota
+	Z_DBERR
+	Z_URL_EXISTS
+	Z_NOT_FOUND
+	Z_NO_URL
+)
+
+func (z Z) Error() string {
+	if z == Z_OK {
+		return "OK"
+	} else if z == Z_DBERR {
+		return "Internal Database error"
+	} else if z == Z_URL_EXISTS {
+		return "URL exists"
+	} else if z == Z_NOT_FOUND {
+		return "Not found"
+	} else if z == Z_NO_URL {
+		return "No URL specified"
+	}
+	return "Unknown error"
+}
+
 func create_tables(dbfile string) error {
 	if file_exists(dbfile) {
 		return fmt.Errorf("File '%s' exists", dbfile)
@@ -56,7 +81,14 @@ func random_editcode() string {
 	return edit_words[rand.Intn(len(edit_words))]
 }
 
-func create_jotipage(db *sql.DB, p *JotiPage) (int64, error) {
+func create_jotipage(db *sql.DB, p *JotiPage) Z {
+	if p.url == "" {
+		return Z_NO_URL
+	}
+	if jotipage_url_exists(db, p.url) {
+		return Z_URL_EXISTS
+	}
+
 	if p.createdt == "" {
 		p.createdt = time.Now().Format(time.RFC3339)
 	}
@@ -69,25 +101,35 @@ func create_jotipage(db *sql.DB, p *JotiPage) (int64, error) {
 	s := "INSERT INTO jotipage (title, url, content, editcode, createdt, lastreaddt) VALUES (?, ?, ?, ?, ?, ?)"
 	result, err := sqlexec(db, s, p.title, p.url, p.content, p.editcode, p.createdt, p.lastreaddt)
 	if err != nil {
-		return 0, err
+		return Z_DBERR
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
-		return 0, err
+		return Z_DBERR
 	}
-	return id, nil
+	p.jotipage_id = id
+	return Z_OK
 }
 
-func find_jotipage_by_url(db *sql.DB, url string) (*JotiPage, error) {
+func jotipage_url_exists(db *sql.DB, url string) bool {
+	var jp JotiPage
+
+	z := find_jotipage_by_url(db, url, &jp)
+	if z == Z_OK {
+		return true
+	}
+	return false
+}
+
+func find_jotipage_by_url(db *sql.DB, url string, jp *JotiPage) Z {
 	s := "SELECT jotipage_id, title, url, content, editcode, createdt, lastreaddt FROM jotipage WHERE url = ?"
 	row := db.QueryRow(s, url)
-	var jp JotiPage
 	err := row.Scan(&jp.jotipage_id, &jp.title, &jp.url, &jp.content, &jp.editcode, &jp.createdt, &jp.lastreaddt)
 	if err == sql.ErrNoRows {
-		return nil, nil
+		return Z_NOT_FOUND
 	}
 	if err != nil {
-		return nil, err
+		return Z_DBERR
 	}
-	return &jp, nil
+	return Z_OK
 }

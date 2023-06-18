@@ -91,6 +91,7 @@ func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *Server) new_handler(w http.ResponseWriter, r *http.Request) {
+	var z Z
 	var p JotiPage
 	var errmsg string
 
@@ -116,12 +117,11 @@ func (server *Server) new_handler(w http.ResponseWriter, r *http.Request) {
 				errmsg = "Please enter a url"
 				break
 			}
-			newid, err := create_jotipage(server.db, &p)
-			if err != nil {
-				errmsg = "A server error occured."
+			z = create_jotipage(server.db, &p)
+			if z != Z_OK {
+				errmsg = z.Error()
 				break
 			}
-			p.jotipage_id = newid
 			print_create_page_success(P, &p, r)
 			return
 		}
@@ -198,24 +198,27 @@ func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, joti_
 }
 
 func (server *Server) page_handler(w http.ResponseWriter, r *http.Request, joti_url string) {
+	var z Z
+	var jp JotiPage
+
 	w.Header().Set("Content-Type", "text/html")
 	P := makePrintFunc(w)
 
-	jp, err := find_jotipage_by_url(server.db, joti_url)
-	if err != nil {
-		html_print_open(P, "Error")
-		P("<p>Error retrieving joti page:</p>\n")
-		P("<p>%s</p>\n", err.Error())
-		html_print_close(P)
-		return
-	}
-	if jp == nil {
+	z = find_jotipage_by_url(server.db, joti_url, &jp)
+	if z == Z_NOT_FOUND {
 		html_print_open(P, "Not Found")
 		P("<p>Page not found</p>\n")
 		html_print_close(P)
 		return
 	}
-	print_joti_page(P, jp)
+	if z != Z_OK {
+		html_print_open(P, "Error")
+		P("<p>Error retrieving joti page:</p>\n")
+		P("<p>%s</p>\n", z.Error())
+		html_print_close(P)
+		return
+	}
+	print_joti_page(P, &jp)
 }
 
 func print_joti_page(P PrintFunc, jp *JotiPage) {
@@ -232,12 +235,12 @@ func print_joti_page(P PrintFunc, jp *JotiPage) {
 	html_print_close(P)
 }
 
-const (
-	PA_NONE = iota
-	PA_INITDBFILE
-)
-
 func parse_args(args []string, cfg *Config) {
+	const (
+		PA_NONE = iota
+		PA_INITDBFILE
+	)
+
 	state := PA_NONE
 	dbfile_set := false
 	port_set := false

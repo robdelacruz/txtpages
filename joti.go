@@ -204,12 +204,28 @@ func print_create_page_success(P PrintFunc, p *JotiPage, r *http.Request) {
 }
 
 func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, joti_url string) {
+	var z Z
+	var jp JotiPage
+
 	w.Header().Set("Content-Type", "text/html")
 	P := makePrintFunc(w)
 
-	html_print_open(P, "Edit")
-	P("<p>edit</p>\n")
-	html_print_close(P)
+	z = find_jotipage_by_url(server.db, joti_url, &jp)
+	if z == Z_NOT_FOUND {
+		html_print_open(P, "Not Found")
+		P("<p>Page not found</p>\n")
+		html_print_close(P)
+		return
+	}
+	if z != Z_OK {
+		html_print_open(P, "Error")
+		P("<p>Error retrieving joti page:</p>\n")
+		P("<p>%s</p>\n", z.Error())
+		html_print_close(P)
+		return
+	}
+
+	print_joti_form(P, &jp, false, Z_OK)
 }
 
 func (server *Server) page_handler(w http.ResponseWriter, r *http.Request, joti_url string) {

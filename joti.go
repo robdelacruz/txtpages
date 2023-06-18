@@ -93,33 +93,25 @@ func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
 func (server *Server) new_handler(w http.ResponseWriter, r *http.Request) {
 	var z Z
 	var p JotiPage
-	var errmsg string
+	var fvalidate bool
 
 	w.Header().Set("Content-Type", "text/html")
 	P := makePrintFunc(w)
 
 	if r.Method == "POST" {
 		p.title = strings.TrimSpace(r.FormValue("title"))
-		p.content = r.FormValue("content")
+		p.content = strings.TrimSpace(r.FormValue("content"))
 		p.url = strings.TrimSpace(r.FormValue("url"))
 		p.editcode = strings.TrimSpace(r.FormValue("editcode"))
 
 		for {
-			if p.title == "" {
-				errmsg = "Please enter a title"
-				break
-			}
-			if p.content == "" {
-				errmsg = "Please enter content"
-				break
-			}
-			if p.url == "" {
-				errmsg = "Please enter a url"
+			if p.title == "" || p.content == "" {
+				fvalidate = true
 				break
 			}
 			z = create_jotipage(server.db, &p)
 			if z != Z_OK {
-				errmsg = z.Error()
+				fvalidate = true
 				break
 			}
 			print_create_page_success(P, &p, r)
@@ -127,10 +119,18 @@ func (server *Server) new_handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	print_joti_form(P, &p, errmsg)
+	print_joti_form(P, &p, fvalidate, z)
 }
 
-func print_joti_form(P PrintFunc, p *JotiPage, errmsg string) {
+func print_joti_form(P PrintFunc, p *JotiPage, fvalidate bool, zresult Z) {
+	var errmsg string
+
+	if fvalidate {
+		if zresult != Z_OK {
+			errmsg = zresult.Error()
+		}
+	}
+
 	html_print_open(P, "Create a page")
 	P("<h1><a href=\"/\">joti</a></h1>\n")
 	P("<p>Simple text web pages</p>\n")
@@ -146,23 +146,38 @@ func print_joti_form(P PrintFunc, p *JotiPage, errmsg string) {
 		P("    </div>\n")
 	}
 	P("    <div>\n")
-	P("        <label for=\"title\">Title</label>\n")
-	P("        <input id=\"title\" name=\"title\" value=\"%s\">\n", escape(p.title))
+	if fvalidate && p.title == "" {
+		P("        <label for=\"title\">Please enter a Title</label>\n")
+		P("        <input id=\"title\" class=\"highlight\" name=\"title\" value=\"%s\">\n", escape(p.title))
+	} else {
+		P("        <label for=\"title\">Title</label>\n")
+		P("        <input id=\"title\" name=\"title\" value=\"%s\">\n", escape(p.title))
+	}
 	P("    </div>\n")
 	P("    <div>\n")
-	P("        <label for=\"content\">Content</label>\n")
-	P("        <textarea id=\"content\" name=\"content\">%s</textarea>\n", escape(p.content))
+	if fvalidate && p.content == "" {
+		P("        <label for=\"content\">Please enter Content</label>\n")
+		P("        <textarea id=\"content\" class=\"highlight\" name=\"content\">%s</textarea>\n", escape(p.content))
+	} else {
+		P("        <label for=\"content\">Content</label>\n")
+		P("        <textarea id=\"content\" name=\"content\">%s</textarea>\n", escape(p.content))
+	}
 	P("    </div>\n")
 	P("    <div>\n")
-	P("        <label for=\"url\">Custom URL (optional)</label>\n")
-	P("        <input id=\"url\" name=\"url\" value=\"%s\">\n", escape(p.url))
+	if fvalidate && zresult == Z_URL_EXISTS {
+		P("        <label for=\"url\">URL already exists, enter another one</label>\n")
+		P("        <input id=\"url\" class=\"highlight\" name=\"url\" value=\"%s\">\n", escape(p.url))
+	} else {
+		P("        <label for=\"url\">Custom URL (optional)</label>\n")
+		P("        <input id=\"url\" name=\"url\" value=\"%s\">\n", escape(p.url))
+	}
 	P("    </div>\n")
 	P("    <div>\n")
 	P("        <label for=\"editcode\">Custom edit code (optional)</label>\n")
 	P("        <input id=\"editcode\" name=\"editcode\" value=\"%s\">\n", escape(p.editcode))
 	P("    </div>\n")
 	P("    <div class=\"jotiform_save\">\n")
-	P("        <button type=\"submit\">Save</button>\n")
+	P("        <button type=\"submit\">Create Page</button>\n")
 	P("    </div>\n")
 	P("</form>\n")
 	html_print_close(P)

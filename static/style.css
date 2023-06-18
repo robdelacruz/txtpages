@@ -66,9 +66,14 @@ input, textarea, button {
     font-weight: bold;
 }
 .jotiform_error {
-    font-weight: bold;
+    padding: 1px 0;
     background-color: lightgray;
-    border: 1px solid;
     text-align: center;
+}
+.jotiform .highlight {
+    border: 2px solid gold;
+    border-radius: 7px;
+    outline: none;
+    box-shadow: 0 0 10px gold;
 }
 

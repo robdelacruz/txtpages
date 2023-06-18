@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"math/rand"
+	"regexp"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -26,7 +28,6 @@ const (
 	Z_DBERR
 	Z_URL_EXISTS
 	Z_NOT_FOUND
-	Z_NO_URL
 )
 
 func (z Z) Error() string {
@@ -38,8 +39,6 @@ func (z Z) Error() string {
 		return "URL exists"
 	} else if z == Z_NOT_FOUND {
 		return "Not found"
-	} else if z == Z_NO_URL {
-		return "No URL specified"
 	}
 	return "Unknown error"
 }
@@ -82,13 +81,9 @@ func random_editcode() string {
 }
 
 func create_jotipage(db *sql.DB, p *JotiPage) Z {
-	if p.url == "" {
-		return Z_NO_URL
-	}
-	if jotipage_url_exists(db, p.url) {
+	if p.url != "" && jotipage_url_exists(db, p.url) {
 		return Z_URL_EXISTS
 	}
-
 	if p.createdt == "" {
 		p.createdt = time.Now().Format(time.RFC3339)
 	}
@@ -98,8 +93,19 @@ func create_jotipage(db *sql.DB, p *JotiPage) Z {
 	if p.editcode == "" {
 		p.editcode = random_editcode()
 	}
-	s := "INSERT INTO jotipage (title, url, content, editcode, createdt, lastreaddt) VALUES (?, ?, ?, ?, ?, ?)"
-	result, err := sqlexec(db, s, p.title, p.url, p.content, p.editcode, p.createdt, p.lastreaddt)
+
+	var s string
+	var result sql.Result
+	var err error
+
+	if p.url == "" {
+		// Generate unique url if no url specified.
+		s = "INSERT INTO jotipage (title, content, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ? || (SELECT MAX(jotipage_id)+1 FROM jotipage))"
+		result, err = sqlexec(db, s, p.title, p.content, p.editcode, p.createdt, p.lastreaddt, generate_jotipage_base_url(p.title))
+	} else {
+		s = "INSERT INTO jotipage (title, content, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ?)"
+		result, err = sqlexec(db, s, p.title, p.content, p.editcode, p.createdt, p.lastreaddt, p.url)
+	}
 	if err != nil {
 		return Z_DBERR
 	}
@@ -108,7 +114,29 @@ func create_jotipage(db *sql.DB, p *JotiPage) Z {
 		return Z_DBERR
 	}
 	p.jotipage_id = id
+
+	// If url was autogen, load the page we just created to retrieve the url.
+	if p.url == "" {
+		z := find_jotipage_by_id(db, id, p)
+		if z != Z_OK {
+			return z
+		}
+	}
 	return Z_OK
+}
+
+func generate_jotipage_base_url(title string) string {
+	url := strings.TrimSpace(strings.ToLower(title))
+
+	// Replace whitespace with underscore
+	re := regexp.MustCompile(`\s`)
+	url = re.ReplaceAllString(url, "_")
+
+	// Remove all chars not matching A-Za-z0-9_
+	re = regexp.MustCompile(`[^\w]`)
+	url = re.ReplaceAllString(url, "")
+
+	return url
 }
 
 func jotipage_url_exists(db *sql.DB, url string) bool {
@@ -121,6 +149,18 @@ func jotipage_url_exists(db *sql.DB, url string) bool {
 	return false
 }
 
+func find_jotipage_by_id(db *sql.DB, id int64, jp *JotiPage) Z {
+	s := "SELECT jotipage_id, title, url, content, editcode, createdt, lastreaddt FROM jotipage WHERE jotipage_id = ?"
+	row := db.QueryRow(s, id)
+	err := row.Scan(&jp.jotipage_id, &jp.title, &jp.url, &jp.content, &jp.editcode, &jp.createdt, &jp.lastreaddt)
+	if err == sql.ErrNoRows {
+		return Z_NOT_FOUND
+	}
+	if err != nil {
+		return Z_DBERR
+	}
+	return Z_OK
+}
 func find_jotipage_by_url(db *sql.DB, url string, jp *JotiPage) Z {
 	s := "SELECT jotipage_id, title, url, content, editcode, createdt, lastreaddt FROM jotipage WHERE url = ?"
 	row := db.QueryRow(s, url)

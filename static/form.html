@@ -15,13 +15,26 @@
     </p>
     <h2>Create a joti webpage</h2>
     <form class="jotiform" action="/submit/" method="post">
+		<div class="jotiform_error">
+            <p>Please fill in the missing fields.</p>
+		</div>
         <div>
             <label for="title">Title</label>
             <input id="title" name="title" value="Title here">
         </div>
         <div>
+            <label for="title2">Title</label>
+            <input class="highlight" id="title2" name="title2" value="Title here">
+        </div>
+        <div>
             <label for="content">Content</label>
             <textarea id="content" name="content">
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            </textarea>
+        </div>
+        <div>
+            <label for="content2">Content</label>
+            <textarea class="highlight" id="content2" name="content2">
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </textarea>
         </div>

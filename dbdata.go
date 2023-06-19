@@ -28,6 +28,7 @@ const (
 	Z_DBERR
 	Z_URL_EXISTS
 	Z_NOT_FOUND
+	Z_WRONG_EDITCODE
 )
 
 func (z Z) Error() string {
@@ -39,6 +40,8 @@ func (z Z) Error() string {
 		return "URL exists"
 	} else if z == Z_NOT_FOUND {
 		return "Not found"
+	} else if z == Z_WRONG_EDITCODE {
+		return "Incorrect edit code"
 	}
 	return "Unknown error"
 }
@@ -81,7 +84,7 @@ func random_editcode() string {
 }
 
 func create_jotipage(db *sql.DB, p *JotiPage) Z {
-	if p.url != "" && jotipage_url_exists(db, p.url) {
+	if p.url != "" && jotipage_url_exists(db, p.url, 0) {
 		return Z_URL_EXISTS
 	}
 	if p.createdt == "" {
@@ -101,7 +104,7 @@ func create_jotipage(db *sql.DB, p *JotiPage) Z {
 	if p.url == "" {
 		// Generate unique url if no url specified.
 		s = "INSERT INTO jotipage (title, content, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ? || (SELECT MAX(jotipage_id)+1 FROM jotipage))"
-		result, err = sqlexec(db, s, p.title, p.content, p.editcode, p.createdt, p.lastreaddt, generate_jotipage_base_url(p.title))
+		result, err = sqlexec(db, s, p.title, p.content, p.editcode, p.createdt, p.lastreaddt, base_url_from_title(p.title))
 	} else {
 		s = "INSERT INTO jotipage (title, content, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ?)"
 		result, err = sqlexec(db, s, p.title, p.content, p.editcode, p.createdt, p.lastreaddt, p.url)
@@ -125,7 +128,36 @@ func create_jotipage(db *sql.DB, p *JotiPage) Z {
 	return Z_OK
 }
 
-func generate_jotipage_base_url(title string) string {
+func edit_jotipage(db *sql.DB, p *JotiPage, editcode string) Z {
+	if editcode != p.editcode {
+		return Z_WRONG_EDITCODE
+	}
+	if p.url != "" && jotipage_url_exists(db, p.url, p.jotipage_id) {
+		return Z_URL_EXISTS
+	}
+	if p.createdt == "" {
+		p.createdt = time.Now().Format(time.RFC3339)
+	}
+	if p.lastreaddt == "" {
+		p.lastreaddt = p.createdt
+	}
+	if p.editcode == "" {
+		p.editcode = random_editcode()
+	}
+	if p.url == "" {
+		// Generate unique url if no url specified.
+		p.url = fmt.Sprintf("%s%d", base_url_from_title(p.title), p.jotipage_id)
+	}
+
+	s := "UPDATE jotipage SET title = ?, content = ?, editcode = ?, lastreaddt = ?, url = ? WHERE jotipage_id = ?"
+	_, err := sqlexec(db, s, p.title, p.content, p.editcode, p.lastreaddt, p.url, p.jotipage_id)
+	if err != nil {
+		return Z_DBERR
+	}
+	return Z_OK
+}
+
+func base_url_from_title(title string) string {
 	url := strings.TrimSpace(strings.ToLower(title))
 
 	// Replace whitespace with underscore
@@ -139,14 +171,17 @@ func generate_jotipage_base_url(title string) string {
 	return url
 }
 
-func jotipage_url_exists(db *sql.DB, url string) bool {
-	var jp JotiPage
-
-	z := find_jotipage_by_url(db, url, &jp)
-	if z == Z_OK {
-		return true
+// Return true if url exists in a previous jotipage row.
+// Exclude row containing exclude_jotipage_id in the check.
+func jotipage_url_exists(db *sql.DB, url string, exclude_jotipage_id int64) bool {
+	s := "SELECT jotipage_id FROM jotipage WHERE url = ? AND jotipage_id <> ?"
+	row := db.QueryRow(s, url, exclude_jotipage_id)
+	var tmpid int64
+	err := row.Scan(&tmpid)
+	if err == sql.ErrNoRows {
+		return false
 	}
-	return false
+	return true
 }
 
 func find_jotipage_by_id(db *sql.DB, id int64, jp *JotiPage) Z {

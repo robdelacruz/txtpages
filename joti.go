@@ -114,15 +114,15 @@ func (server *Server) new_handler(w http.ResponseWriter, r *http.Request) {
 				fvalidate = true
 				break
 			}
-			print_create_page_success(P, &p, r)
+			print_save_page_success(P, &p, r)
 			return
 		}
 	}
 
-	print_joti_form(P, &p, fvalidate, z)
+	print_create_page_form(r, P, &p, fvalidate, z)
 }
 
-func print_joti_form(P PrintFunc, p *JotiPage, fvalidate bool, zresult Z) {
+func print_create_page_form(r *http.Request, P PrintFunc, p *JotiPage, fvalidate bool, zresult Z) {
 	var errmsg string
 
 	if fvalidate {
@@ -139,7 +139,7 @@ func print_joti_form(P PrintFunc, p *JotiPage, fvalidate bool, zresult Z) {
 	P("    <a href=\"/\">How to use joti?</a>\n")
 	P("</p>\n")
 	P("<h2>Create a joti webpage</h2>\n")
-	P("<form class=\"jotiform\" method=\"post\" action=\"/\">\n")
+	P("<form class=\"jotiform\" method=\"post\" action=\"%s\">\n", r.URL.Path)
 	if errmsg != "" {
 		P("    <div class=\"jotiform_error\">\n")
 		P("        <p>%s</p>\n", errmsg)
@@ -183,7 +183,7 @@ func print_joti_form(P PrintFunc, p *JotiPage, fvalidate bool, zresult Z) {
 	html_print_close(P)
 }
 
-func print_create_page_success(P PrintFunc, p *JotiPage, r *http.Request) {
+func print_save_page_success(P PrintFunc, p *JotiPage, r *http.Request) {
 	href_link := fmt.Sprintf("/%s", p.url)
 	edit_href_link := fmt.Sprintf("/%s/edit", p.url)
 
@@ -206,6 +206,8 @@ func print_create_page_success(P PrintFunc, p *JotiPage, r *http.Request) {
 func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, joti_url string) {
 	var z Z
 	var jp JotiPage
+	var editcode string
+	var fvalidate bool
 
 	w.Header().Set("Content-Type", "text/html")
 	P := makePrintFunc(w)
@@ -225,7 +227,88 @@ func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, joti_
 		return
 	}
 
-	print_joti_form(P, &jp, false, Z_OK)
+	if r.Method == "POST" {
+		jp.title = strings.TrimSpace(r.FormValue("title"))
+		jp.content = strings.TrimSpace(r.FormValue("content"))
+		jp.url = strings.TrimSpace(r.FormValue("url"))
+		editcode = strings.TrimSpace(r.FormValue("editcode"))
+
+		for {
+			if jp.title == "" || jp.content == "" || editcode != jp.editcode {
+				fvalidate = true
+				break
+			}
+			z = edit_jotipage(server.db, &jp, editcode)
+			if z != Z_OK {
+				fvalidate = true
+				break
+			}
+			print_save_page_success(P, &jp, r)
+			return
+		}
+	}
+
+	print_edit_page_form(r, P, &jp, editcode, fvalidate, Z_OK)
+}
+
+func print_edit_page_form(r *http.Request, P PrintFunc, p *JotiPage, editcode string, fvalidate bool, zresult Z) {
+	var errmsg string
+
+	if fvalidate {
+		if zresult != Z_OK {
+			errmsg = zresult.Error()
+		}
+	}
+
+	html_print_open(P, "Edit page")
+	P("<h2>Edit joti webpage</h2>\n")
+	P("<form class=\"jotiform\" method=\"post\" action=\"%s\">\n", r.URL.Path)
+	if errmsg != "" {
+		P("    <div class=\"jotiform_error\">\n")
+		P("        <p>%s</p>\n", errmsg)
+		P("    </div>\n")
+	}
+	P("    <div>\n")
+	if fvalidate && p.title == "" {
+		P("        <label for=\"title\">Please enter a Title</label>\n")
+		P("        <input id=\"title\" class=\"highlight\" name=\"title\" value=\"%s\">\n", escape(p.title))
+	} else {
+		P("        <label for=\"title\">Title</label>\n")
+		P("        <input id=\"title\" name=\"title\" value=\"%s\">\n", escape(p.title))
+	}
+	P("    </div>\n")
+	P("    <div>\n")
+	if fvalidate && p.content == "" {
+		P("        <label for=\"content\">Please enter Content</label>\n")
+		P("        <textarea id=\"content\" class=\"highlight\" name=\"content\">%s</textarea>\n", escape(p.content))
+	} else {
+		P("        <label for=\"content\">Content</label>\n")
+		P("        <textarea id=\"content\" name=\"content\">%s</textarea>\n", escape(p.content))
+	}
+	P("    </div>\n")
+	P("    <div>\n")
+	if fvalidate && zresult == Z_URL_EXISTS {
+		P("        <label for=\"url\">URL already exists, enter another one</label>\n")
+		P("        <input id=\"url\" class=\"highlight\" name=\"url\" value=\"%s\">\n", escape(p.url))
+	} else {
+		P("        <label for=\"url\">Custom URL</label>\n")
+		P("        <input id=\"url\" name=\"url\" value=\"%s\">\n", escape(p.url))
+	}
+	P("    </div>\n")
+	P("    <div>\n")
+	if fvalidate && editcode != p.editcode {
+		P("        <label for=\"editcode\">Incorrect edit code, please re-enter</label>\n")
+		P("        <input id=\"editcode\" class=\"highlight\" name=\"editcode\" value=\"%s\">\n", escape(editcode))
+	} else {
+		P("        <label for=\"editcode\">Enter edit code</label>\n")
+		P("        <input id=\"editcode\" name=\"editcode\" value=\"%s\">\n", escape(editcode))
+	}
+	P("    </div>\n")
+	P("    <div class=\"jotiform_save\">\n")
+	P("        <button type=\"submit\">Save Page</button>\n")
+	P("    </div>\n")
+	P("</form>\n")
+	html_print_close(P)
 }
 
 func (server *Server) page_handler(w http.ResponseWriter, r *http.Request, joti_url string) {

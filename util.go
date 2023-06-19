@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const ISO8601Fmt = "2006-01-02T15:04:05Z"
+
 func isodate(t time.Time) string {
 	return t.Format(time.RFC3339)
 }
@@ -27,6 +29,9 @@ func randdate(startyear, endyear int) time.Time {
 	maxSecs := time.Date(endyear, 1, 0, 0, 0, 0, 0, time.UTC).Unix()
 	secs := minSecs + rand.Int63n(maxSecs-minSecs)
 	return time.Unix(secs, 0)
+}
+func nowdate() string {
+	return time.Now().Format(ISO8601Fmt)
 }
 
 func atoi(s string) int {

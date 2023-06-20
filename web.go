@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"regexp"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
@@ -48,6 +49,12 @@ func escape(s string) string {
 }
 func unescape(s string) string {
 	return html.UnescapeString(s)
+}
+func sanitize_jotipage_url(url string) string {
+	// Remove all chars not matching A-Za-z0-9_
+	re := regexp.MustCompile(`[^\w]`)
+	url = re.ReplaceAllString(url, "")
+	return url
 }
 
 func handleErr(w http.ResponseWriter, err error, sfunc string) {

@@ -42,6 +42,9 @@ input, textarea, button {
     font: inherit;
 }
 
+.footer {
+    text-align: right;
+}
 .jotiform > div {
     margin: 0.5rem 0;
 }

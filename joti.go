@@ -24,6 +24,9 @@ type Server struct {
 	cfg *Config
 }
 
+var logprint LogPrintfFunc
+var logerr LogErrFunc
+
 func main() {
 	var err error
 
@@ -57,6 +60,12 @@ Initialize db file:
 		fmt.Printf("Error opening '%s' (%s)\n", cfg.dbfile, err)
 		os.Exit(1)
 	}
+
+	logger, err := create_logger_from_file("log.txt")
+	if err != nil {
+		panic(err)
+	}
+	logprint = make_log_print_func(logger)
 
 	// Check and delete old pages every 24 hours
 	const TICKER_DURATION = 24 * time.Hour

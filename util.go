@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"math/rand"
 	"os"
 	"strconv"
@@ -80,4 +81,27 @@ func file_exists(file string) bool {
 		return false
 	}
 	return true
+}
+
+func create_logger_from_file(logfile string) (*log.Logger, error) {
+	f, err := os.OpenFile(logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return nil, err
+	}
+	logger := log.New(f, "", 0)
+	return logger, nil
+}
+
+type LogPrintfFunc func(fmt string, a ...interface{})
+type LogErrFunc func(prefix string, err error)
+
+func make_log_print_func(logger *log.Logger) LogPrintfFunc {
+	return func(fmt string, a ...interface{}) {
+		logger.Printf(fmt, a...)
+	}
+}
+func make_log_err_func(logger *log.Logger) LogErrFunc {
+	return func(prefix string, err error) {
+		logger.Printf("%s: %s\n", prefix, err.Error())
+	}
 }

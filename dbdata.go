@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"regexp"
 	"strings"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -86,6 +87,7 @@ func find_jotipage_by_id(db *sql.DB, id int64, jp *JotiPage) Z {
 		return Z_NOT_FOUND
 	}
 	if err != nil {
+		panic(err)
 		return Z_DBERR
 	}
 	return Z_OK
@@ -127,17 +129,19 @@ func create_jotipage(db *sql.DB, p *JotiPage) Z {
 
 	if p.url == "" {
 		// Generate unique url if no url specified.
-		s = "INSERT INTO jotipage (title, content, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ? || (SELECT MAX(jotipage_id)+1 FROM jotipage))"
+		s = "INSERT INTO jotipage (title, content, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ? || (SELECT IFNULL(MAX(jotipage_id), 0)+1 FROM jotipage))"
 		result, err = sqlexec(db, s, p.title, p.content, p.editcode, p.createdt, p.lastreaddt, base_url_from_title(p.title))
 	} else {
 		s = "INSERT INTO jotipage (title, content, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ?)"
 		result, err = sqlexec(db, s, p.title, p.content, p.editcode, p.createdt, p.lastreaddt, p.url)
 	}
 	if err != nil {
+		panic(err)
 		return Z_DBERR
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
+		panic(err)
 		return Z_DBERR
 	}
 	p.jotipage_id = id
@@ -213,4 +217,38 @@ func jotipage_url_exists(db *sql.DB, url string, exclude_jotipage_id int64) bool
 		return false
 	}
 	return true
+}
+
+// Delete jotipages with lastreaddt before specified duration
+// Ex.
+// Delete with lastreaddt older than 60 seconds
+// delete_jotipages_before_duration(60 * time.Second)
+//
+// Delete with lastreaddt older than 60 days
+// delete_jotipages_before_duration(60 * time.Hour * 24)
+func delete_jotipages_before_duration(db *sql.DB, d time.Duration) Z {
+	var err error
+	cutoffdt := isodate(time.Now().Add(-d))
+	fmt.Printf("Deleting jotipages older than %s\n", cutoffdt)
+
+	s1 := "SELECT jotipage_id, title, lastreaddt FROM jotipage WHERE lastreaddt < ?"
+	rows, err := db.Query(s1, cutoffdt)
+	if err != nil {
+		panic(err)
+		return Z_DBERR
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var title, lastreaddt string
+		rows.Scan(&id, &title, &lastreaddt)
+		fmt.Printf("***  %s %d %s\n", lastreaddt, id, title)
+	}
+
+	s := "DELETE FROM jotipage WHERE lastreaddt < ?"
+	_, err = sqlexec(db, s, cutoffdt)
+	if err != nil {
+		return Z_DBERR
+	}
+	return Z_OK
 }

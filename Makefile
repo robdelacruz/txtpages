@@ -11,8 +11,8 @@ dep:
 joti: $(PROGSRC) $(LIBSRC)
 	go build -o joti $(PROGSRC) $(LIBSRC)
 
-t: t.go
-	go build -o t t.go
+t: t.go util.go
+	go build -o t t.go util.go
 
 clean:
 	rm -rf joti t

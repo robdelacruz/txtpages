@@ -58,10 +58,23 @@ Initialize db file:
 		os.Exit(1)
 	}
 
+	// Check and delete old pages every 24 hours
+	const TICKER_DURATION = 24 * time.Hour
+
+	// Delete pages with lastreaddt older than 6 months
+	CLEAR_OLD_PAGES_DURATION := days_to_duration(30) * 6
+
+	ticker := time.NewTicker(TICKER_DURATION)
+	defer ticker.Stop()
+	go func() {
+		for {
+			<-ticker.C
+			delete_jotipages_before_duration(db, CLEAR_OLD_PAGES_DURATION)
+		}
+	}()
+
 	rand.Seed(time.Now().UnixNano())
-
 	server := Server{db, &cfg}
-
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	http.HandleFunc("/", server.index_handler)
 

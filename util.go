@@ -8,12 +8,13 @@ import (
 )
 
 const ISO8601Fmt = "2006-01-02T15:04:05Z"
+const RFC3339 = time.RFC3339
 
 func isodate(t time.Time) string {
-	return t.Format(time.RFC3339)
+	return t.Format(ISO8601Fmt)
 }
 func parseisodate(s string) time.Time {
-	t, _ := time.Parse(time.RFC3339, s)
+	t, _ := time.Parse(ISO8601Fmt, s)
 	return t
 }
 func formatisodate(s string) string {
@@ -32,6 +33,9 @@ func randdate(startyear, endyear int) time.Time {
 }
 func nowdate() string {
 	return time.Now().Format(ISO8601Fmt)
+}
+func days_to_duration(ndays int) time.Duration {
+	return time.Duration(ndays) * time.Hour * 24
 }
 
 func atoi(s string) int {

@@ -257,6 +257,28 @@ func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, joti_
 	print_edit_page_form(P, &jp, r.URL.Path, fvalidate, z, editcode)
 }
 
+func print_jotipage_header(P PrintFunc, title string, url string) {
+	P("<div class=\"titlebar header\">\n")
+	P("    <h1>%s</h1>\n", title)
+	P("    <p><a href=\"/%s/edit\">edit</a></p>\n", url)
+	P("</div>\n")
+}
+
+func print_joti_header(P PrintFunc) {
+	P("<div class=\"titlebar header\">\n")
+	P("    <p><a href=\"/\">joti</a> - Fast text web pages</p>\n")
+	P("    <p><a href=\"/\">about</a></p>\n")
+	P("    <p><a href=\"/\">how to use</a></p>\n")
+	P("</div>\n")
+}
+func print_joti_footer(P PrintFunc) {
+	P("<div class=\"titlebar footer\">\n")
+	P("    <p><a href=\"/\">joti</a> - Fast text web pages</p>\n")
+	P("    <p><a href=\"/\">about</a></p>\n")
+	P("    <p><a href=\"/\">how to use</a></p>\n")
+	P("</div>\n")
+}
+
 func print_joti_page(P PrintFunc, jp *JotiPage) {
 	html_print_open(P, "Joti page")
 	html_str, err := md_to_html(nil, []byte(jp.content))
@@ -266,8 +288,9 @@ func print_joti_page(P PrintFunc, jp *JotiPage) {
 		html_print_close(P)
 		return
 	}
+	print_jotipage_header(P, jp.title, jp.url)
 	P("%s\n", html_str)
-	P("<p class=\"footer\"><a href=\"/\">joti</a></p>\n")
+	print_joti_footer(P)
 	html_print_close(P)
 }
 
@@ -280,13 +303,8 @@ func print_create_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalid
 		}
 	}
 
-	html_print_open(P, "Create a page")
-	P("<h1><a href=\"/\">joti</a></h1>\n")
-	P("<p>Simple text web pages</p>\n")
-	P("<p>\n")
-	P("    <a href=\"/\">What is joti?</a><br>\n")
-	P("    <a href=\"/\">How to use joti?</a>\n")
-	P("</p>\n")
+	html_print_open(P, "Create joti page")
+	print_joti_header(P)
 	P("<h2>Create a joti webpage</h2>\n")
 	P("<form class=\"jotiform\" method=\"post\" action=\"%s\">\n", actionpath)
 	if errmsg != "" {

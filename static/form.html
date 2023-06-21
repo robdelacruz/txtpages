@@ -7,13 +7,12 @@
 <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body class="dark">
-    <h1><a href="/">joti</a></h1>
-    <p>Simple text web pages</p>
-    <p>
-        <a href="/">What is joti?</a><br>
-        <a href="/">How to use joti</a>
-    </p>
-    <h2>Create a joti webpage</h2>
+    <div class="titlebar header">
+        <p><a href="/">joti</a> - Fast text web pages</p>
+        <p><a href="/">about</a></p>
+        <p><a href="/">how to use</a></p>
+    </div>
+    <h2>Create a webpage</h2>
     <form class="jotiform" action="/submit/" method="post">
 		<div class="jotiform_error">
             <p>Please fill in the missing fields.</p>
@@ -47,7 +46,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
             <input id="editcode" name="editcode" value="">
         </div>
         <div class="jotiform_save">
-            <button type="button">Save your joti</button>
+            <button type="button">Create</button>
         </div>
     </form>
 </body>

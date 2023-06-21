@@ -42,8 +42,27 @@ input, textarea, button {
     font: inherit;
 }
 
+.titlebar {
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    align-items: baseline;
+}
+.titlebar :first-child {
+    flex-grow: 1;
+}
+.titlebar > * {
+    margin: 0;
+    padding: 0;
+}
+.header {
+    margin: 0 0 10px;
+    border-bottom: #444 1px solid;
+}
 .footer {
-    text-align: right;
+    margin: 50px 0;
+    border-top: #444 1px solid;
 }
 .jotiform > div {
     margin: 0.5rem 0;

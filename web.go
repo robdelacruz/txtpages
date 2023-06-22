@@ -15,6 +15,12 @@ import (
 	"github.com/yuin/goldmark/extension"
 )
 
+type HtmlMeta struct {
+	desc     string
+	keywords string
+	author   string
+}
+
 type PrintFunc func(format string, a ...interface{}) (n int, err error)
 
 func makePrintFunc(w io.Writer) func(format string, a ...interface{}) (n int, err error) {
@@ -85,12 +91,17 @@ func logErr(sfunc string, err error) {
 }
 
 //*** HTML template functions ***
-func html_print_open(P PrintFunc, title string) {
+func html_print_open(P PrintFunc, title string, m *HtmlMeta) {
 	P("<!DOCTYPE html>\n")
 	P("<html>\n")
 	P("<head>\n")
 	P("<meta charset=\"utf-8\">\n")
-	P("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
+	if m != nil {
+		P("<meta name=\"description\" content=\"%s\">", m.desc)
+		P("<meta name=\"keywords\" content=\"%s\">", m.keywords)
+		P("<meta name=\"author\" content=\"%s\">", m.author)
+		P("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
+	}
 	P("<title>%s</title>\n", title)
 	P("<link rel=\"icon\" href=\"/static/news-paper.svg\">\n")
 	P("<link rel=\"stylesheet\" type=\"text/css\" href=\"/static/style.css\">\n")

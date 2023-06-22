@@ -114,6 +114,9 @@ func create_jotipage(db *sql.DB, jp *JotiPage) Z {
 	if jp.url != "" && jotipage_url_exists(db, jp.url, 0) {
 		return Z_URL_EXISTS
 	}
+	if jp.url == "howto" || jp.url == "about" {
+		return Z_URL_EXISTS
+	}
 	if jp.createdt == "" {
 		jp.createdt = nowdate()
 	}
@@ -162,6 +165,9 @@ func edit_jotipage(db *sql.DB, jp *JotiPage, editcode string) Z {
 		return Z_WRONG_EDITCODE
 	}
 	if jp.url != "" && jotipage_url_exists(db, jp.url, jp.jotipage_id) {
+		return Z_URL_EXISTS
+	}
+	if jp.url == "howto" || jp.url == "about" {
 		return Z_URL_EXISTS
 	}
 	if jp.createdt == "" {

@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/yuin/goldmark"
@@ -45,7 +45,7 @@ func test_md() {
 		goldmark.WithExtensions(extension.GFM),
 	)
 
-	bs, err := ioutil.ReadFile("test.md")
+	bs, err := os.ReadFile("test.md")
 
 	var buf bytes.Buffer
 	err = md.Convert(bs, &buf)

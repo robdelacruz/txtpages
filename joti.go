@@ -27,6 +27,9 @@ type Server struct {
 var logprint LogPrintfFunc
 var logerr LogErrFunc
 
+var stock_pages map[string][]byte
+var stock_page_titles map[string]string
+
 func main() {
 	var err error
 
@@ -70,6 +73,8 @@ Initialize db file:
 	logprint = make_log_print_func(l)
 	logerr = make_log_err_func(l)
 
+	init_stock_pages()
+
 	// Check and delete old pages every 24 hours
 	const TICKER_DURATION = 24 * time.Hour
 
@@ -93,26 +98,6 @@ Initialize db file:
 	fmt.Printf("Listening on %s...\n", cfg.port)
 	err = http.ListenAndServe(fmt.Sprintf(":%s", cfg.port), nil)
 	log.Fatal(err)
-}
-
-func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
-	var joti_url string
-	var action string
-	ss := strings.Split(r.URL.Path, "/")
-	if len(ss) >= 2 {
-		joti_url = ss[1]
-	}
-	if len(ss) >= 3 {
-		action = ss[2]
-	}
-
-	if action == "edit" {
-		server.edit_handler(w, r, joti_url)
-	} else if joti_url != "" {
-		server.page_handler(w, r, joti_url)
-	} else {
-		server.new_handler(w, r)
-	}
 }
 
 func parse_args(args []string, cfg *Config) {
@@ -152,6 +137,43 @@ func parse_args(args []string, cfg *Config) {
 	}
 }
 
+func init_stock_pages() {
+	stock_pages = make(map[string][]byte)
+	stock_page_titles = make(map[string]string)
+
+	bs, err := os.ReadFile("stock/howto.md")
+	if err == nil {
+		stock_pages["howto"] = bs
+		stock_page_titles["howto"] = "Joti how-to"
+	}
+
+	bs, err = os.ReadFile("stock/about.md")
+	if err == nil {
+		stock_pages["about"] = bs
+		stock_page_titles["about"] = "About Joti"
+	}
+}
+
+func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
+	var joti_url string
+	var action string
+	ss := strings.Split(r.URL.Path, "/")
+	if len(ss) >= 2 {
+		joti_url = ss[1]
+	}
+	if len(ss) >= 3 {
+		action = ss[2]
+	}
+
+	if action == "edit" {
+		server.edit_handler(w, r, joti_url)
+	} else if joti_url != "" {
+		server.page_handler(w, r, joti_url)
+	} else {
+		server.new_handler(w, r)
+	}
+}
+
 func (server *Server) page_handler(w http.ResponseWriter, r *http.Request, joti_url string) {
 	var z Z
 	var jp JotiPage
@@ -159,12 +181,11 @@ func (server *Server) page_handler(w http.ResponseWriter, r *http.Request, joti_
 	w.Header().Set("Content-Type", "text/html")
 	P := makePrintFunc(w)
 
-	if joti_url == "howto" {
-		print_howto_page(P)
-		return
-	}
-	if joti_url == "about" {
-		print_about_page(P)
+	// Show predefined stock page if exists.
+	md, ok := stock_pages[joti_url]
+	if ok {
+		title := stock_page_titles[joti_url]
+		print_stock_page(P, md, title)
 		return
 	}
 
@@ -286,12 +307,17 @@ func print_jotipage_header(P PrintFunc, title string, url string) {
 	P("    <p><a href=\"/%s/edit\">edit</a></p>\n", url)
 	P("</div>\n")
 }
-func print_howto_page(P PrintFunc) {
-	html_print_open(P, "Joti howto", nil)
-	html_print_close(P)
-}
-func print_about_page(P PrintFunc) {
-	html_print_open(P, "About Joti", nil)
+func print_stock_page(P PrintFunc, md []byte, title string) {
+	html_print_open(P, title, nil)
+	html_str, err := md_to_html(nil, md)
+	if err != nil {
+		P("<p>Error converting joti page:</p>\n")
+		P("<p>%s</p>\n", err.Error())
+		html_print_close(P)
+		return
+	}
+	P("%s\n", html_str)
+	print_joti_footer(P)
 	html_print_close(P)
 }
 
@@ -331,7 +357,7 @@ func print_create_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalid
 	P("    <div>\n")
 	if fvalidate && jp.title == "" {
 		P("        <label for=\"title\">Please enter a Title</label>\n")
-		P("        <input id=\"title\" class=\"highlight\" name=\"title\" value=\"%s\">\n", escape(jp.title))
+		P("        <input id=\"title\" class=\"highlight\" autofocus name=\"title\" value=\"%s\">\n", escape(jp.title))
 	} else {
 		P("        <label for=\"title\">Title</label>\n")
 		P("        <input id=\"title\" name=\"title\" value=\"%s\">\n", escape(jp.title))
@@ -340,7 +366,7 @@ func print_create_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalid
 	P("    <div>\n")
 	if fvalidate && jp.content == "" {
 		P("        <label for=\"content\">Please enter Content</label>\n")
-		P("        <textarea id=\"content\" class=\"highlight\" name=\"content\">%s</textarea>\n", escape(jp.content))
+		P("        <textarea id=\"content\" class=\"highlight\" autofocus name=\"content\">%s</textarea>\n", escape(jp.content))
 	} else {
 		P("        <label for=\"content\">Content</label>\n")
 		P("        <textarea id=\"content\" name=\"content\">%s</textarea>\n", escape(jp.content))
@@ -349,7 +375,7 @@ func print_create_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalid
 	P("    <div>\n")
 	if fvalidate && zresult == Z_URL_EXISTS {
 		P("        <label for=\"url\">URL already exists, enter another one</label>\n")
-		P("        <input id=\"url\" class=\"highlight\" name=\"url\" value=\"%s\">\n", escape(jp.url))
+		P("        <input id=\"url\" class=\"highlight\" name=\"url\" autofocus value=\"%s\">\n", escape(jp.url))
 	} else {
 		P("        <label for=\"url\">Custom URL (optional)</label>\n")
 		P("        <input id=\"url\" name=\"url\" value=\"%s\">\n", escape(jp.url))
@@ -386,7 +412,7 @@ func print_edit_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalidat
 	P("    <div>\n")
 	if fvalidate && jp.title == "" {
 		P("        <label for=\"title\">Please enter a Title</label>\n")
-		P("        <input id=\"title\" class=\"highlight\" name=\"title\" value=\"%s\">\n", escape(jp.title))
+		P("        <input id=\"title\" class=\"highlight\" autofocus name=\"title\" value=\"%s\">\n", escape(jp.title))
 	} else {
 		P("        <label for=\"title\">Title</label>\n")
 		P("        <input id=\"title\" name=\"title\" value=\"%s\">\n", escape(jp.title))
@@ -395,7 +421,7 @@ func print_edit_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalidat
 	P("    <div>\n")
 	if fvalidate && jp.content == "" {
 		P("        <label for=\"content\">Please enter Content</label>\n")
-		P("        <textarea id=\"content\" class=\"highlight\" name=\"content\">%s</textarea>\n", escape(jp.content))
+		P("        <textarea id=\"content\" class=\"highlight\" autofocus name=\"content\">%s</textarea>\n", escape(jp.content))
 	} else {
 		P("        <label for=\"content\">Content</label>\n")
 		P("        <textarea id=\"content\" name=\"content\">%s</textarea>\n", escape(jp.content))
@@ -404,7 +430,7 @@ func print_edit_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalidat
 	P("    <div>\n")
 	if fvalidate && zresult == Z_URL_EXISTS {
 		P("        <label for=\"url\">URL already exists, enter another one</label>\n")
-		P("        <input id=\"url\" class=\"highlight\" name=\"url\" value=\"%s\">\n", escape(jp.url))
+		P("        <input id=\"url\" class=\"highlight\" name=\"url\" autofocus value=\"%s\">\n", escape(jp.url))
 	} else {
 		P("        <label for=\"url\">Custom URL</label>\n")
 		P("        <input id=\"url\" name=\"url\" value=\"%s\">\n", escape(jp.url))
@@ -413,7 +439,7 @@ func print_edit_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalidat
 	P("    <div>\n")
 	if fvalidate && editcode != jp.editcode {
 		P("        <label for=\"editcode\">Incorrect edit code, please re-enter</label>\n")
-		P("        <input id=\"editcode\" class=\"highlight\" name=\"editcode\" value=\"%s\">\n", escape(editcode))
+		P("        <input id=\"editcode\" class=\"highlight\" autofocus name=\"editcode\" value=\"%s\">\n", escape(editcode))
 	} else {
 		P("        <label for=\"editcode\">Enter edit code</label>\n")
 		P("        <input id=\"editcode\" name=\"editcode\" value=\"%s\">\n", escape(editcode))

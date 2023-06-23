@@ -7,6 +7,8 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -24,11 +26,18 @@ type Server struct {
 	cfg *Config
 }
 
+type StockPage struct {
+	url   string
+	title string
+	html  string
+}
+
+const STOCK_PAGES_DIR = "stock"
+
+var stock_pages []StockPage
+
 var logprint LogPrintfFunc
 var logerr LogErrFunc
-
-var stock_pages map[string][]byte
-var stock_page_titles map[string]string
 
 func main() {
 	var err error
@@ -73,7 +82,7 @@ Initialize db file:
 	logprint = make_log_print_func(l)
 	logerr = make_log_err_func(l)
 
-	init_stock_pages()
+	stock_pages = load_stock_pages()
 
 	// Check and delete old pages every 24 hours
 	const TICKER_DURATION = 24 * time.Hour
@@ -137,21 +146,61 @@ func parse_args(args []string, cfg *Config) {
 	}
 }
 
-func init_stock_pages() {
-	stock_pages = make(map[string][]byte)
-	stock_page_titles = make(map[string]string)
+func load_stock_pages() []StockPage {
+	pp := []StockPage{}
 
-	bs, err := os.ReadFile("stock/howto.md")
-	if err == nil {
-		stock_pages["howto"] = bs
-		stock_page_titles["howto"] = "Joti how-to"
+	ee, err := os.ReadDir(STOCK_PAGES_DIR)
+	if err != nil {
+		panic(err)
+	}
+	for _, e := range ee {
+		if e.IsDir() {
+			continue
+		}
+
+		filename := e.Name()
+
+		bs, err := os.ReadFile(fmt.Sprintf("%s/%s", STOCK_PAGES_DIR, filename))
+		if err != nil {
+			panic(err)
+		}
+
+		// url is filename minux the extension
+		url := strings.TrimSuffix(filename, filepath.Ext(filename))
+
+		// title is first line matching the following:
+		// # Title is followed by one or more '#'
+		re := regexp.MustCompile("(?m)^#+\\s+(.*)$")
+		ss := re.FindStringSubmatch(string(bs))
+		title := url
+		if len(ss) > 1 {
+			title = ss[1]
+		}
+
+		// convert stock page markdown to html
+		html, err := md_to_html(nil, bs)
+		if err != nil {
+			panic(err)
+		}
+
+		sp := StockPage{}
+		sp.url = url
+		sp.title = title
+		sp.html = html
+
+		pp = append(pp, sp)
 	}
 
-	bs, err = os.ReadFile("stock/about.md")
-	if err == nil {
-		stock_pages["about"] = bs
-		stock_page_titles["about"] = "About Joti"
+	return pp
+}
+
+func match_stock_page(url string, ss []StockPage) *StockPage {
+	for _, sp := range ss {
+		if url == sp.url {
+			return &sp
+		}
 	}
+	return nil
 }
 
 func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
@@ -181,11 +230,10 @@ func (server *Server) page_handler(w http.ResponseWriter, r *http.Request, joti_
 	w.Header().Set("Content-Type", "text/html")
 	P := makePrintFunc(w)
 
-	// Show predefined stock page if exists.
-	md, ok := stock_pages[joti_url]
-	if ok {
-		title := stock_page_titles[joti_url]
-		print_stock_page(P, md, title)
+	// Show stock page if exists.
+	sp := match_stock_page(joti_url, stock_pages)
+	if sp != nil {
+		print_stock_page(P, sp)
 		return
 	}
 
@@ -307,16 +355,9 @@ func print_jotipage_header(P PrintFunc, title string, url string) {
 	P("    <p><a href=\"/%s/edit\">edit</a></p>\n", url)
 	P("</div>\n")
 }
-func print_stock_page(P PrintFunc, md []byte, title string) {
-	html_print_open(P, title, nil)
-	html_str, err := md_to_html(nil, md)
-	if err != nil {
-		P("<p>Error converting joti page:</p>\n")
-		P("<p>%s</p>\n", err.Error())
-		html_print_close(P)
-		return
-	}
-	P("%s\n", html_str)
+func print_stock_page(P PrintFunc, sp *StockPage) {
+	html_print_open(P, sp.title, nil)
+	P("%s\n", sp.html)
 	print_joti_footer(P)
 	html_print_close(P)
 }

@@ -510,7 +510,6 @@ func print_save_page_success(P PrintFunc, jp *JotiPage, r *http.Request) {
 	P("<p>You will need this code to make changes to this page in the future:</p>\n")
 	P("<p>Your edit code: <b>%s</b></p>\n", jp.editcode)
 	P("<p>You must keep this info safe (and bookmarking this page won't work). It cannot be accessed again!</p>\n")
-	P("<p><a href=\"/\">joti home</a></p>\n")
 	print_joti_footer(P)
 	html_print_close(P)
 }

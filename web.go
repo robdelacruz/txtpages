@@ -57,9 +57,14 @@ func unescape(s string) string {
 	return html.UnescapeString(s)
 }
 func sanitize_jotipage_url(url string) string {
-	// Remove all chars not matching A-Za-z0-9_
-	re := regexp.MustCompile(`[^\w]`)
+	// Replace whitespace with "_"
+	re := regexp.MustCompile(`\s+`)
+	url = re.ReplaceAllString(url, "_")
+
+	// Remove all chars not matching alphanumeric, '_', '-' chars
+	re = regexp.MustCompile(`[^\w\-]`)
 	url = re.ReplaceAllString(url, "")
+
 	return url
 }
 

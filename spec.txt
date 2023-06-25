@@ -42,3 +42,5 @@ CREATE TABLE page (
 );
 
 https://webdesign.tutsplus.com/tutorials/html5-form-validation-with-the-pattern-attribute--cms-25145
+
+https://siongui.github.io/2017/02/27/css-only-toggle-dom-element/

@@ -194,15 +194,6 @@ func load_stock_pages() []StockPage {
 	return pp
 }
 
-func match_stock_page(url string, ss []StockPage) *StockPage {
-	for _, sp := range ss {
-		if url == sp.url {
-			return &sp
-		}
-	}
-	return nil
-}
-
 func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
 	var joti_url string
 	var action string
@@ -253,6 +244,15 @@ func (server *Server) page_handler(w http.ResponseWriter, r *http.Request, joti_
 	}
 	touch_jotipage_by_url(server.db, jp.url)
 	print_joti_page(P, &jp)
+}
+
+func match_stock_page(url string, ss []StockPage) *StockPage {
+	for _, sp := range ss {
+		if url == sp.url {
+			return &sp
+		}
+	}
+	return nil
 }
 
 func (server *Server) new_handler(w http.ResponseWriter, r *http.Request) {
@@ -335,6 +335,18 @@ func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, joti_
 	print_edit_page_form(P, &jp, r.URL.Path, fvalidate, z, editcode)
 }
 
+// print_titlebar(P, "header", "/", "home", "/", "about")
+func print_titlebar(P PrintFunc, classname string, ll ...string) {
+	// Must pass an even number of ll args (link/target pairs)
+	if len(ll)%2 > 0 {
+		return
+	}
+	P("<div class=\"titlebar %s\">\n", classname)
+	for i := 0; i < len(ll); i += 2 {
+		P("    <p><a href=\"%s\">%s</a>", ll[i], ll[i+1])
+	}
+	P("</div>\n")
+}
 func print_joti_header(P PrintFunc) {
 	P("<div class=\"titlebar header\">\n")
 	P("    <p><a href=\"/\">joti</a> - Fast text web pages</p>\n")
@@ -443,6 +455,7 @@ func print_edit_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalidat
 	}
 
 	html_print_open(P, "Edit page", nil)
+	print_joti_header(P)
 	P("<h2>Edit joti webpage</h2>\n")
 	P("<form class=\"jotiform\" method=\"post\" action=\"%s\">\n", actionpath)
 	if errmsg != "" {
@@ -490,7 +503,6 @@ func print_edit_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalidat
 	P("        <button type=\"submit\">Save Page</button>\n")
 	P("    </div>\n")
 	P("</form>\n")
-	print_joti_footer(P)
 	html_print_close(P)
 }
 

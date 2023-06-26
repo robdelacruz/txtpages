@@ -1,12 +1,10 @@
-# Meet txti
+# About Joti
 
-Txti is fast web pages for everybody. Most of the world still does not have internet, but many websites from countries like the United States are big and complicated. This makes it hard for people with slow internet to use these sites. It is even harder for those people to put their own thoughts on the internet. With txti, anyone can use any device to share their story.
+Joti is a clone of the popular [Txti](https://txti.es/) tool for creating fast text web pages. Use Joti to quickly create blog posts, reference pages, write down your thoughts, send links to the pages you create.
 
-Txti was created by [Barry T. Smith](https://barrytsmith.com/) because he believes that high speed internet is a responsibility, not a service people buy. He got a lot of help from his friend [Adam Newbold](https://neatnik.net/).
+Joti will always be free and open source. Feel free to copy the [code](https://github.com/robdelacruz/joti), and deploy to your own hosting service.
 
-## How you can help txti
+## Contribute to Joti
 
-We want to keep txti free to use forever. There are a few easy ways you can help. The best way you can help is by using txti regularly and by telling your friends about txti. Next, you can follow txti ([@txties](https://twitter.com/txties)) on twitter.
-
-*Thank you for using txti!*
+Follow me on twitter [@robcomputing](https://twitter.com/robcomputing). Or donate to Joti development (todo: links).
 

@@ -30,6 +30,7 @@ type StockPage struct {
 	url   string
 	title string
 	html  string
+	desc  string
 }
 
 const STOCK_PAGES_DIR = "stock"
@@ -38,6 +39,9 @@ var stock_pages []StockPage
 
 var logprint LogPrintfFunc
 var logerr LogErrFunc
+
+const JOTI_SLOGAN = "Joti - Fast text web pages"
+const JOTI_AUTHOR = "joti"
 
 func main() {
 	var err error
@@ -177,6 +181,8 @@ func load_stock_pages() []StockPage {
 			title = ss[1]
 		}
 
+		desc := content_to_desc(string(bs))
+
 		// convert stock page markdown to html
 		html, err := md_to_html(nil, bs)
 		if err != nil {
@@ -187,6 +193,7 @@ func load_stock_pages() []StockPage {
 		sp.url = url
 		sp.title = title
 		sp.html = html
+		sp.desc = desc
 
 		pp = append(pp, sp)
 	}
@@ -230,13 +237,13 @@ func (server *Server) page_handler(w http.ResponseWriter, r *http.Request, joti_
 
 	z = find_jotipage_by_url(server.db, joti_url, &jp)
 	if z == Z_NOT_FOUND {
-		html_print_open(P, "Not Found", nil)
+		html_print_open(P, "Not Found", "", "")
 		P("<p>Page not found</p>\n")
 		html_print_close(P)
 		return
 	}
 	if z != Z_OK {
-		html_print_open(P, "Error", nil)
+		html_print_open(P, "Error", "", "")
 		P("<p>Error retrieving joti page:</p>\n")
 		P("<p>%s</p>\n", z.Error())
 		html_print_close(P)
@@ -298,13 +305,13 @@ func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, joti_
 
 	z = find_jotipage_by_url(server.db, joti_url, &jp)
 	if z == Z_NOT_FOUND {
-		html_print_open(P, "Not Found", nil)
+		html_print_open(P, "Not Found", "", "")
 		P("<p>Page not found</p>\n")
 		html_print_close(P)
 		return
 	}
 	if z != Z_OK {
-		html_print_open(P, "Error", nil)
+		html_print_open(P, "Error", "", "")
 		P("<p>Error retrieving joti page:</p>\n")
 		P("<p>%s</p>\n", z.Error())
 		html_print_close(P)
@@ -349,33 +356,38 @@ func print_titlebar(P PrintFunc, classname string, ll ...string) {
 }
 func print_joti_header(P PrintFunc) {
 	P("<div class=\"titlebar header\">\n")
-	P("    <p><a href=\"/\">joti</a> - Fast text web pages</p>\n")
-	P("    <p><a href=\"/about\">about</a></p>\n")
-	P("    <p><a href=\"/howto\">how to use</a></p>\n")
+	P("    <p><a href=\"/\">Joti</a> - Fast text web pages</p>\n")
+	P("    <p><a href=\"/about\">About</a></p>\n")
+	P("    <p><a href=\"/howto\">How to use</a></p>\n")
 	P("</div>\n")
 }
 func print_joti_footer(P PrintFunc) {
 	P("<div class=\"titlebar footer\">\n")
-	P("    <p><a href=\"/\">joti</a> - Fast text web pages</p>\n")
-	P("    <p><a href=\"/about\">about</a></p>\n")
-	P("    <p><a href=\"/howto\">how to use</a></p>\n")
+	P("    <p><a href=\"/\">Joti</a> - Fast text web pages</p>\n")
+	P("    <p><a href=\"/about\">About</a></p>\n")
+	P("    <p><a href=\"/howto\">How to use</a></p>\n")
 	P("</div>\n")
 }
 func print_jotipage_header(P PrintFunc, title string, url string) {
 	P("<div class=\"titlebar header\">\n")
 	P("    <h1>%s</h1>\n", title)
-	P("    <p><a href=\"/%s/edit\">edit</a></p>\n", url)
+	P("    <p><a href=\"/%s/edit\">Edit</a></p>\n", url)
 	P("</div>\n")
 }
+
 func print_stock_page(P PrintFunc, sp *StockPage) {
-	html_print_open(P, sp.title, nil)
+	html_print_open(P, sp.title, sp.desc, JOTI_AUTHOR)
 	P("%s\n", sp.html)
 	print_joti_footer(P)
 	html_print_close(P)
 }
 
 func print_joti_page(P PrintFunc, jp *JotiPage) {
-	html_print_open(P, jp.title, nil)
+	desc := jp.desc
+	if desc == "" {
+		desc = content_to_desc(jp.content)
+	}
+	html_print_open(P, jp.title, desc, jp.author)
 	html_str, err := md_to_html(nil, []byte(jp.content))
 	if err != nil {
 		P("<p>Error converting joti page:</p>\n")
@@ -398,7 +410,7 @@ func print_create_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalid
 		}
 	}
 
-	html_print_open(P, "Create joti page", nil)
+	html_print_open(P, "Create joti page", JOTI_SLOGAN, JOTI_AUTHOR)
 	print_joti_header(P)
 	P("<h2>Create a joti webpage</h2>\n")
 	P("<form class=\"jotiform\" method=\"post\" action=\"%s\">\n", actionpath)
@@ -454,7 +466,7 @@ func print_edit_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalidat
 		}
 	}
 
-	html_print_open(P, "Edit page", nil)
+	html_print_open(P, "Edit page", JOTI_SLOGAN, JOTI_AUTHOR)
 	print_joti_header(P)
 	P("<h2>Edit joti webpage</h2>\n")
 	P("<form class=\"jotiform\" method=\"post\" action=\"%s\">\n", actionpath)
@@ -513,7 +525,7 @@ func print_save_page_success(P PrintFunc, jp *JotiPage, r *http.Request) {
 	page_name := fmt.Sprintf("%s/%s", r.Host, jp.url)
 	edit_page_name := fmt.Sprintf("%s/%s/edit", r.Host, jp.url)
 
-	html_print_open(P, "Success", nil)
+	html_print_open(P, "Success", "", "")
 	P("<h2>You made a page.</h2>\n")
 	P("<p>The link to your page is here:</p>\n")
 	P("<p><a href=\"%s\">%s</a></p>", href_link, page_name)

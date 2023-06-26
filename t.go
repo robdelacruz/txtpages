@@ -11,7 +11,16 @@ import (
 )
 
 func main() {
-	test_time()
+	s := "string"
+	s2 := s[:4]
+
+	desc_len := 200
+	content_len := len(s)
+	if content_len < desc_len {
+		desc_len = content_len
+	}
+	s3 := s[:desc_len]
+	fmt.Printf("s: '%s' s2: '%s' s3: '%s'\n", s, s2, s3)
 }
 
 func test_time() {

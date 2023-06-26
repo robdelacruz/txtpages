@@ -16,6 +16,8 @@ type JotiPage struct {
 	title       string
 	url         string
 	content     string
+	desc        string
+	author      string
 	editcode    string
 	createdt    string
 	lastreaddt  string
@@ -57,8 +59,38 @@ func create_tables(dbfile string) error {
 	}
 
 	ss := []string{
-		"CREATE TABLE jotipage (jotipage_id INTEGER PRIMARY KEY NOT NULL, title TEXT NOT NULL DEFAULT '', url TEXT UNIQUE NOT NULL, content TEXT NOT NULL DEFAULT '', editcode TEXT NOT NULL DEFAULT '', createdt TEXT NOT NULL, lastreaddt TEXT NOT NULL);",
-		`INSERT INTO jotipage (jotipage_id, title, url, content, editcode, createdt, lastreaddt) VALUES(1, "First Post!", "firstpost", "This is the first post.", "password", strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), strftime('%Y-%m-%dT%H:%M:%SZ', 'now'));`,
+		`CREATE TABLE jotipage (
+	jotipage_id INTEGER PRIMARY KEY NOT NULL,
+	title TEXT NOT NULL DEFAULT '',
+	url TEXT UNIQUE NOT NULL,
+	content TEXT NOT NULL DEFAULT '',
+	desc TEXT NOT NULL DEFAULT '',
+	author TEXT NOT NULL DEFAULT '',
+	editcode TEXT NOT NULL DEFAULT '',
+	createdt TEXT NOT NULL,
+	lastreaddt TEXT NOT NULL
+);`,
+		`INSERT INTO jotipage (
+	jotipage_id,
+	title,
+	url,
+	content,
+	editcode,
+	desc,
+	author,
+	createdt,
+	lastreaddt)
+VALUES(
+	1,
+	"First Post!",
+	"firstpost",
+	"This is the first post.",
+	"",
+	"",
+	"",
+	strftime('%Y-%m-%dT%H:%M:%SZ', 'now'),
+	strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+);`,
 	}
 
 	tx, err := db.Begin()
@@ -80,9 +112,9 @@ func create_tables(dbfile string) error {
 }
 
 func find_jotipage_by_id(db *sql.DB, id int64, jp *JotiPage) Z {
-	s := "SELECT jotipage_id, title, url, content, editcode, createdt, lastreaddt FROM jotipage WHERE jotipage_id = ?"
+	s := "SELECT jotipage_id, title, url, content, desc, author, editcode, createdt, lastreaddt FROM jotipage WHERE jotipage_id = ?"
 	row := db.QueryRow(s, id)
-	err := row.Scan(&jp.jotipage_id, &jp.title, &jp.url, &jp.content, &jp.editcode, &jp.createdt, &jp.lastreaddt)
+	err := row.Scan(&jp.jotipage_id, &jp.title, &jp.url, &jp.content, &jp.desc, &jp.author, &jp.editcode, &jp.createdt, &jp.lastreaddt)
 	if err == sql.ErrNoRows {
 		return Z_NOT_FOUND
 	}
@@ -93,9 +125,9 @@ func find_jotipage_by_id(db *sql.DB, id int64, jp *JotiPage) Z {
 	return Z_OK
 }
 func find_jotipage_by_url(db *sql.DB, url string, jp *JotiPage) Z {
-	s := "SELECT jotipage_id, title, url, content, editcode, createdt, lastreaddt FROM jotipage WHERE url = ?"
+	s := "SELECT jotipage_id, title, url, content, desc, author, editcode, createdt, lastreaddt FROM jotipage WHERE url = ?"
 	row := db.QueryRow(s, url)
-	err := row.Scan(&jp.jotipage_id, &jp.title, &jp.url, &jp.content, &jp.editcode, &jp.createdt, &jp.lastreaddt)
+	err := row.Scan(&jp.jotipage_id, &jp.title, &jp.url, &jp.content, &jp.desc, &jp.author, &jp.editcode, &jp.createdt, &jp.lastreaddt)
 	if err == sql.ErrNoRows {
 		return Z_NOT_FOUND
 	}
@@ -108,6 +140,22 @@ func find_jotipage_by_url(db *sql.DB, url string, jp *JotiPage) Z {
 
 func random_editcode() string {
 	return edit_words[rand.Intn(len(edit_words))]
+}
+
+func content_to_desc(content string) string {
+	// Use first 200 chars for desc
+	desc_len := 200
+	content_len := len(content)
+	if content_len < desc_len {
+		desc_len = content_len
+	}
+	desc := content[:desc_len]
+
+	// Remove markdown heading ###... chars from desc
+	re := regexp.MustCompile("(?m)^#+")
+	desc = re.ReplaceAllString(desc, "")
+
+	return desc
 }
 
 func create_jotipage(db *sql.DB, jp *JotiPage) Z {
@@ -133,11 +181,11 @@ func create_jotipage(db *sql.DB, jp *JotiPage) Z {
 
 	if jp.url == "" {
 		// Generate unique url if no url specified.
-		s = "INSERT INTO jotipage (title, content, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ? || (SELECT IFNULL(MAX(jotipage_id), 0)+1 FROM jotipage))"
-		result, err = sqlexec(db, s, jp.title, jp.content, jp.editcode, jp.createdt, jp.lastreaddt, base_url_from_title(jp.title))
+		s = "INSERT INTO jotipage (title, content, desc, author, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ? || (SELECT IFNULL(MAX(jotipage_id), 0)+1 FROM jotipage))"
+		result, err = sqlexec(db, s, jp.title, jp.content, jp.desc, jp.author, jp.editcode, jp.createdt, jp.lastreaddt, base_url_from_title(jp.title))
 	} else {
-		s = "INSERT INTO jotipage (title, content, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ?)"
-		result, err = sqlexec(db, s, jp.title, jp.content, jp.editcode, jp.createdt, jp.lastreaddt, jp.url)
+		s = "INSERT INTO jotipage (title, content, desc, author, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ?)"
+		result, err = sqlexec(db, s, jp.title, jp.content, jp.desc, jp.author, jp.editcode, jp.createdt, jp.lastreaddt, jp.url)
 	}
 	if err != nil {
 		logerr("create_jotipage", err)
@@ -182,8 +230,8 @@ func edit_jotipage(db *sql.DB, jp *JotiPage, editcode string) Z {
 		jp.url = fmt.Sprintf("%s%d", base_url_from_title(jp.title), jp.jotipage_id)
 	}
 
-	s := "UPDATE jotipage SET title = ?, content = ?, editcode = ?, lastreaddt = ?, url = ? WHERE jotipage_id = ?"
-	_, err := sqlexec(db, s, jp.title, jp.content, jp.editcode, jp.lastreaddt, jp.url, jp.jotipage_id)
+	s := "UPDATE jotipage SET title = ?, content = ?, desc = ?, author = ?, editcode = ?, lastreaddt = ?, url = ? WHERE jotipage_id = ?"
+	_, err := sqlexec(db, s, jp.title, jp.content, jp.desc, jp.author, jp.editcode, jp.lastreaddt, jp.url, jp.jotipage_id)
 	if err != nil {
 		logerr("edit_jotipage", err)
 		return Z_DBERR

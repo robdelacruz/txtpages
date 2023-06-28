@@ -1,19 +1,19 @@
-PROGSRC=txtpage.go editwords.go dbdata.go
+PROGSRC=txtpages.go editwords.go dbdata.go
 LIBSRC=db.go util.go web.go
 
-all: txtpage t
+all: txtpages t
 
 dep:
 	go env -w GO111MODULE=auto
 	go get github.com/mattn/go-sqlite3
 	go get github.com/yuin/goldmark
 
-txtpage: $(PROGSRC) $(LIBSRC)
-	go build -o txtpage $(PROGSRC) $(LIBSRC)
+txtpages: $(PROGSRC) $(LIBSRC)
+	go build -o txtpages $(PROGSRC) $(LIBSRC)
 
 t: t.go util.go
 	go build -o t t.go util.go
 
 clean:
-	rm -rf txtpage t
+	rm -rf txtpages t
 

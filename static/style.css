@@ -23,6 +23,10 @@ h1, h2, h3 {
 img {
     max-width: 100%;
 }
+blockquote, pre {
+    margin: 0;
+    padding: 10px 10px;
+}
 @media (prefers-color-scheme: dark) {
     body {
         color: #c9d1d9; 
@@ -36,6 +40,10 @@ img {
     }
     .txtpageform_error {
         color: black;
+    }
+    blockquote, pre {
+        background: rgb(31,41,55);
+        1background: rgb(55,65,81);
     }
 }
 input, textarea, button {

@@ -40,8 +40,8 @@ var stock_pages []StockPage
 var logprint LogPrintfFunc
 var logerr LogErrFunc
 
-const TXTPAGE_TITLE = "TxtPage - Quickly create fast text web pages"
-const TXTPAGE_AUTHOR = "txtpage"
+const TXTPAGES_TITLE = "TxtPages - Create fast text web pages"
+const TXTPAGES_AUTHOR = "txtpages"
 
 func main() {
 	var err error
@@ -390,7 +390,7 @@ func print_page_header(P PrintFunc, title string, url string) {
 }
 
 func print_stock_page(P PrintFunc, sp *StockPage) {
-	html_print_open(P, sp.title, sp.desc, TXTPAGE_AUTHOR)
+	html_print_open(P, sp.title, sp.desc, TXTPAGES_AUTHOR)
 	P("%s\n", sp.html)
 	print_footer(P)
 	html_print_close(P)
@@ -424,7 +424,7 @@ func print_create_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalida
 		}
 	}
 
-	html_print_open(P, "Create txtpage", TXTPAGE_TITLE, TXTPAGE_AUTHOR)
+	html_print_open(P, TXTPAGES_TITLE, TXTPAGES_TITLE, TXTPAGES_AUTHOR)
 	print_header(P)
 	P("<h2>Create a txtpage</h2>\n")
 	P("<form class=\"txtpageform\" method=\"post\" action=\"%s\">\n", actionpath)
@@ -480,7 +480,7 @@ func print_edit_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalidate
 		}
 	}
 
-	html_print_open(P, "Edit page", TXTPAGE_TITLE, TXTPAGE_AUTHOR)
+	html_print_open(P, "Edit txtpage", TXTPAGES_TITLE, TXTPAGES_AUTHOR)
 	print_header(P)
 	P("<h2>Edit txtpage</h2>\n")
 	P("<form class=\"txtpageform\" method=\"post\" action=\"%s\">\n", actionpath)

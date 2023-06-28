@@ -1,10 +1,12 @@
-# About Joti
+# About TxtPages
 
-Joti is a clone of the popular [Txti](https://txti.es/) tool for creating fast text web pages. Use Joti to quickly create blog posts, reference pages, write down your thoughts, send links to the pages you create.
+Quickly create blog posts, reference pages, write down your thoughts. The page you create will have a unique url which you can share with others.
 
-Joti will always be free and open source. Feel free to copy the [code](https://github.com/robdelacruz/joti), and deploy to your own hosting service.
+TxtPages is a clone of the popular [Txti](https://txti.es/) tool for creating fast text web pages.
 
-## Contribute to Joti
+TxtPages will always be free and open source. Feel free to copy the [code](https://github.com/robdelacruz/txtpages), and deploy to your own hosting service.
 
-Follow me on twitter [@robcomputing](https://twitter.com/robcomputing). Or donate to Joti development (todo: links).
+## Contribute to TxtPages
+
+Follow me on twitter [@robcomputing](https://twitter.com/robcomputing). Feel free to donate to fund TxtPages hosting and development (todo: links).
 

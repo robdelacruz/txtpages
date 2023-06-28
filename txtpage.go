@@ -40,8 +40,8 @@ var stock_pages []StockPage
 var logprint LogPrintfFunc
 var logerr LogErrFunc
 
-const JOTI_SLOGAN = "Joti - Fast text web pages"
-const JOTI_AUTHOR = "joti"
+const TXTPAGE_TITLE = "TxtPage - Quickly create fast text web pages"
+const TXTPAGE_AUTHOR = "txtpage"
 
 func main() {
 	var err error
@@ -99,7 +99,7 @@ Initialize db file:
 	go func() {
 		for {
 			<-ticker.C
-			delete_jotipages_before_duration(db, CLEAR_OLD_PAGES_DURATION)
+			delete_txtpages_before_duration(db, CLEAR_OLD_PAGES_DURATION)
 		}
 	}()
 
@@ -202,55 +202,56 @@ func load_stock_pages() []StockPage {
 }
 
 func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
-	var joti_url string
+	var url string
 	var action string
 	ss := strings.Split(r.URL.Path, "/")
 	if len(ss) >= 2 {
-		joti_url = ss[1]
+		url = ss[1]
 	}
 	if len(ss) >= 3 {
 		action = ss[2]
 	}
 
 	if action == "edit" {
-		server.edit_handler(w, r, joti_url)
-	} else if joti_url != "" {
-		server.page_handler(w, r, joti_url)
+		server.edit_handler(w, r, url)
+	} else if url != "" {
+		server.page_handler(w, r, url)
 	} else {
 		server.new_handler(w, r)
 	}
 }
 
-func (server *Server) page_handler(w http.ResponseWriter, r *http.Request, joti_url string) {
+func (server *Server) page_handler(w http.ResponseWriter, r *http.Request, url string) {
 	var z Z
-	var jp JotiPage
+	var tp TxtPage
 
 	w.Header().Set("Content-Type", "text/html")
 	P := makePrintFunc(w)
 
 	// Show stock page if exists.
-	sp := match_stock_page(joti_url, stock_pages)
+	sp := match_stock_page(url, stock_pages)
 	if sp != nil {
 		print_stock_page(P, sp)
 		return
 	}
 
-	z = find_jotipage_by_url(server.db, joti_url, &jp)
+	z = find_txtpage_by_url(server.db, url, &tp)
 	if z == Z_NOT_FOUND {
 		html_print_open(P, "Not Found", "", "")
-		P("<p>Page not found</p>\n")
+		print_header(P)
+		P("<p>Page not found: %s</p>\n", url)
 		html_print_close(P)
 		return
 	}
 	if z != Z_OK {
 		html_print_open(P, "Error", "", "")
-		P("<p>Error retrieving joti page:</p>\n")
-		P("<p>%s</p>\n", z.Error())
+		print_header(P)
+		P("<p>Error retrieving txtpage: %s</p>\n", z.Error())
 		html_print_close(P)
 		return
 	}
-	touch_jotipage_by_url(server.db, jp.url)
-	print_joti_page(P, &jp)
+	touch_txtpage_by_url(server.db, tp.url)
+	print_txtpage(P, &tp)
 }
 
 func match_stock_page(url string, ss []StockPage) *StockPage {
@@ -264,82 +265,95 @@ func match_stock_page(url string, ss []StockPage) *StockPage {
 
 func (server *Server) new_handler(w http.ResponseWriter, r *http.Request) {
 	var z Z
-	var jp JotiPage
+	var tp TxtPage
 	var fvalidate bool
 
 	w.Header().Set("Content-Type", "text/html")
 	P := makePrintFunc(w)
 
 	if r.Method == "POST" {
-		jp.title = strings.TrimSpace(r.FormValue("title"))
-		jp.content = strings.TrimSpace(r.FormValue("content"))
-		jp.url = sanitize_jotipage_url(strings.TrimSpace(r.FormValue("url")))
-		jp.editcode = strings.TrimSpace(r.FormValue("editcode"))
+		tp.title = strings.TrimSpace(r.FormValue("title"))
+		tp.content = strings.TrimSpace(r.FormValue("content"))
+		tp.url = sanitize_txtpage_url(strings.TrimSpace(r.FormValue("url")))
+		tp.editcode = strings.TrimSpace(r.FormValue("editcode"))
 
 		for {
-			if jp.title == "" || jp.content == "" {
+			if tp.title == "" || tp.content == "" {
 				fvalidate = true
 				break
 			}
-			z = create_jotipage(server.db, &jp)
+			z = create_txtpage(server.db, &tp)
 			if z != Z_OK {
 				fvalidate = true
 				break
 			}
-			print_save_page_success(P, &jp, r)
+			print_save_page_success(P, &tp, r)
 			return
 		}
 	}
 
-	print_create_page_form(P, &jp, r.URL.Path, fvalidate, z)
+	print_create_page_form(P, &tp, r.URL.Path, fvalidate, z)
 }
 
-func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, joti_url string) {
+func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, url string) {
 	var z Z
-	var jp JotiPage
+	var tp TxtPage
 	var editcode string
 	var fvalidate bool
 
 	w.Header().Set("Content-Type", "text/html")
 	P := makePrintFunc(w)
 
-	z = find_jotipage_by_url(server.db, joti_url, &jp)
+	z = find_txtpage_by_url(server.db, url, &tp)
 	if z == Z_NOT_FOUND {
 		html_print_open(P, "Not Found", "", "")
+		print_header(P)
 		P("<p>Page not found</p>\n")
 		html_print_close(P)
 		return
 	}
 	if z != Z_OK {
 		html_print_open(P, "Error", "", "")
-		P("<p>Error retrieving joti page:</p>\n")
-		P("<p>%s</p>\n", z.Error())
+		print_header(P)
+		P("<p>Error retrieving txtpage: %s</p>\n", z.Error())
 		html_print_close(P)
 		return
 	}
 
 	if r.Method == "POST" {
-		jp.title = strings.TrimSpace(r.FormValue("title"))
-		jp.content = strings.TrimSpace(r.FormValue("content"))
-		jp.url = sanitize_jotipage_url(strings.TrimSpace(r.FormValue("url")))
+		tp.title = strings.TrimSpace(r.FormValue("title"))
+		tp.content = strings.TrimSpace(r.FormValue("content"))
+		tp.url = sanitize_txtpage_url(strings.TrimSpace(r.FormValue("url")))
 		editcode = strings.TrimSpace(r.FormValue("editcode"))
 
 		for {
-			if jp.title == "" || jp.content == "" || editcode != jp.editcode {
+			if tp.title == "" || tp.content == "" || editcode != tp.editcode {
 				fvalidate = true
 				break
 			}
-			z = edit_jotipage(server.db, &jp, editcode)
+			z = edit_txtpage(server.db, &tp, editcode)
 			if z != Z_OK {
 				fvalidate = true
 				break
 			}
-			print_save_page_success(P, &jp, r)
+			print_save_page_success(P, &tp, r)
 			return
 		}
 	}
 
-	print_edit_page_form(P, &jp, r.URL.Path, fvalidate, z, editcode)
+	print_edit_page_form(P, &tp, r.URL.Path, fvalidate, z, editcode)
+}
+
+func sanitize_txtpage_url(url string) string {
+	// Replace whitespace with "_"
+	re := regexp.MustCompile(`\s+`)
+	url = re.ReplaceAllString(url, "_")
+
+	// Remove all chars not matching alphanumeric, '_', '-' chars
+	re = regexp.MustCompile(`[^\w\-]`)
+	url = re.ReplaceAllString(url, "")
+
+	return url
 }
 
 // print_titlebar(P, "header", "/", "home", "/", "about")
@@ -354,21 +368,21 @@ func print_titlebar(P PrintFunc, classname string, ll ...string) {
 	}
 	P("</div>\n")
 }
-func print_joti_header(P PrintFunc) {
+func print_header(P PrintFunc) {
 	P("<div class=\"titlebar header\">\n")
-	P("    <p><a href=\"/\">Joti</a> - Fast text web pages</p>\n")
+	P("    <p><a href=\"/\">TxtPages</a> - Quickly create fast text web pages</p>\n")
 	P("    <p><a href=\"/about\">About</a></p>\n")
 	P("    <p><a href=\"/howto\">How to use</a></p>\n")
 	P("</div>\n")
 }
-func print_joti_footer(P PrintFunc) {
+func print_footer(P PrintFunc) {
 	P("<div class=\"titlebar footer\">\n")
-	P("    <p><a href=\"/\">Joti</a> - Fast text web pages</p>\n")
+	P("    <p><a href=\"/\">TxtPages</a> - Quickly create fast text web pages</p>\n")
 	P("    <p><a href=\"/about\">About</a></p>\n")
 	P("    <p><a href=\"/howto\">How to use</a></p>\n")
 	P("</div>\n")
 }
-func print_jotipage_header(P PrintFunc, title string, url string) {
+func print_page_header(P PrintFunc, title string, url string) {
 	P("<div class=\"titlebar header\">\n")
 	P("    <h1>%s</h1>\n", title)
 	P("    <p><a href=\"/%s/edit\">Edit</a></p>\n", url)
@@ -376,32 +390,32 @@ func print_jotipage_header(P PrintFunc, title string, url string) {
 }
 
 func print_stock_page(P PrintFunc, sp *StockPage) {
-	html_print_open(P, sp.title, sp.desc, JOTI_AUTHOR)
+	html_print_open(P, sp.title, sp.desc, TXTPAGE_AUTHOR)
 	P("%s\n", sp.html)
-	print_joti_footer(P)
+	print_footer(P)
 	html_print_close(P)
 }
 
-func print_joti_page(P PrintFunc, jp *JotiPage) {
-	desc := jp.desc
+func print_txtpage(P PrintFunc, tp *TxtPage) {
+	desc := tp.desc
 	if desc == "" {
-		desc = content_to_desc(jp.content)
+		desc = content_to_desc(tp.content)
 	}
-	html_print_open(P, jp.title, desc, jp.author)
-	html_str, err := md_to_html(nil, []byte(jp.content))
+	html_print_open(P, tp.title, desc, tp.author)
+	html_str, err := md_to_html(nil, []byte(tp.content))
 	if err != nil {
-		P("<p>Error converting joti page:</p>\n")
-		P("<p>%s</p>\n", err.Error())
+		print_header(P)
+		P("<p>Error converting txtpage: %s</p>\n", err.Error())
 		html_print_close(P)
 		return
 	}
-	print_jotipage_header(P, jp.title, jp.url)
+	print_page_header(P, tp.title, tp.url)
 	P("%s\n", html_str)
-	print_joti_footer(P)
+	print_footer(P)
 	html_print_close(P)
 }
 
-func print_create_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalidate bool, zresult Z) {
+func print_create_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalidate bool, zresult Z) {
 	var errmsg string
 
 	if fvalidate {
@@ -410,54 +424,54 @@ func print_create_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalid
 		}
 	}
 
-	html_print_open(P, "Create joti page", JOTI_SLOGAN, JOTI_AUTHOR)
-	print_joti_header(P)
-	P("<h2>Create a joti webpage</h2>\n")
-	P("<form class=\"jotiform\" method=\"post\" action=\"%s\">\n", actionpath)
+	html_print_open(P, "Create txtpage", TXTPAGE_TITLE, TXTPAGE_AUTHOR)
+	print_header(P)
+	P("<h2>Create a txtpage</h2>\n")
+	P("<form class=\"txtpageform\" method=\"post\" action=\"%s\">\n", actionpath)
 	if errmsg != "" {
-		P("    <div class=\"jotiform_error\">\n")
+		P("    <div class=\"txtpageform_error\">\n")
 		P("        <p>%s</p>\n", errmsg)
 		P("    </div>\n")
 	}
 	P("    <div>\n")
-	if fvalidate && jp.title == "" {
+	if fvalidate && tp.title == "" {
 		P("        <label for=\"title\">Please enter a Title</label>\n")
-		P("        <input id=\"title\" class=\"highlight\" autofocus name=\"title\" value=\"%s\">\n", escape(jp.title))
+		P("        <input id=\"title\" class=\"highlight\" autofocus name=\"title\" value=\"%s\">\n", escape(tp.title))
 	} else {
 		P("        <label for=\"title\">Title</label>\n")
-		P("        <input id=\"title\" name=\"title\" value=\"%s\">\n", escape(jp.title))
+		P("        <input id=\"title\" name=\"title\" value=\"%s\">\n", escape(tp.title))
 	}
 	P("    </div>\n")
 	P("    <div>\n")
-	if fvalidate && jp.content == "" {
+	if fvalidate && tp.content == "" {
 		P("        <label for=\"content\">Please enter Content</label>\n")
-		P("        <textarea id=\"content\" class=\"highlight\" autofocus name=\"content\">%s</textarea>\n", escape(jp.content))
+		P("        <textarea id=\"content\" class=\"highlight\" autofocus name=\"content\">%s</textarea>\n", escape(tp.content))
 	} else {
 		P("        <label for=\"content\">Content</label>\n")
-		P("        <textarea id=\"content\" name=\"content\">%s</textarea>\n", escape(jp.content))
+		P("        <textarea id=\"content\" name=\"content\">%s</textarea>\n", escape(tp.content))
 	}
 	P("    </div>\n")
 	P("    <div>\n")
 	if fvalidate && zresult == Z_URL_EXISTS {
 		P("        <label for=\"url\">URL already exists, enter another one</label>\n")
-		P("        <input id=\"url\" class=\"highlight\" name=\"url\" autofocus value=\"%s\">\n", escape(jp.url))
+		P("        <input id=\"url\" class=\"highlight\" name=\"url\" autofocus value=\"%s\">\n", escape(tp.url))
 	} else {
 		P("        <label for=\"url\">Custom URL (optional)</label>\n")
-		P("        <input id=\"url\" name=\"url\" value=\"%s\">\n", escape(jp.url))
+		P("        <input id=\"url\" name=\"url\" value=\"%s\">\n", escape(tp.url))
 	}
 	P("    </div>\n")
 	P("    <div>\n")
 	P("        <label for=\"editcode\">Custom edit code (optional)</label>\n")
-	P("        <input id=\"editcode\" name=\"editcode\" value=\"%s\">\n", escape(jp.editcode))
+	P("        <input id=\"editcode\" name=\"editcode\" value=\"%s\">\n", escape(tp.editcode))
 	P("    </div>\n")
-	P("    <div class=\"jotiform_save\">\n")
+	P("    <div class=\"txtpageform_save\">\n")
 	P("        <button type=\"submit\">Create Page</button>\n")
 	P("    </div>\n")
 	P("</form>\n")
 	html_print_close(P)
 }
 
-func print_edit_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalidate bool, zresult Z, editcode string) {
+func print_edit_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalidate bool, zresult Z, editcode string) {
 	var errmsg string
 
 	if fvalidate {
@@ -466,44 +480,44 @@ func print_edit_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalidat
 		}
 	}
 
-	html_print_open(P, "Edit page", JOTI_SLOGAN, JOTI_AUTHOR)
-	print_joti_header(P)
-	P("<h2>Edit joti webpage</h2>\n")
-	P("<form class=\"jotiform\" method=\"post\" action=\"%s\">\n", actionpath)
+	html_print_open(P, "Edit page", TXTPAGE_TITLE, TXTPAGE_AUTHOR)
+	print_header(P)
+	P("<h2>Edit txtpage</h2>\n")
+	P("<form class=\"txtpageform\" method=\"post\" action=\"%s\">\n", actionpath)
 	if errmsg != "" {
-		P("    <div class=\"jotiform_error\">\n")
+		P("    <div class=\"txtpageform_error\">\n")
 		P("        <p>%s</p>\n", errmsg)
 		P("    </div>\n")
 	}
 	P("    <div>\n")
-	if fvalidate && jp.title == "" {
+	if fvalidate && tp.title == "" {
 		P("        <label for=\"title\">Please enter a Title</label>\n")
-		P("        <input id=\"title\" class=\"highlight\" autofocus name=\"title\" value=\"%s\">\n", escape(jp.title))
+		P("        <input id=\"title\" class=\"highlight\" autofocus name=\"title\" value=\"%s\">\n", escape(tp.title))
 	} else {
 		P("        <label for=\"title\">Title</label>\n")
-		P("        <input id=\"title\" name=\"title\" value=\"%s\">\n", escape(jp.title))
+		P("        <input id=\"title\" name=\"title\" value=\"%s\">\n", escape(tp.title))
 	}
 	P("    </div>\n")
 	P("    <div>\n")
-	if fvalidate && jp.content == "" {
+	if fvalidate && tp.content == "" {
 		P("        <label for=\"content\">Please enter Content</label>\n")
-		P("        <textarea id=\"content\" class=\"highlight\" autofocus name=\"content\">%s</textarea>\n", escape(jp.content))
+		P("        <textarea id=\"content\" class=\"highlight\" autofocus name=\"content\">%s</textarea>\n", escape(tp.content))
 	} else {
 		P("        <label for=\"content\">Content</label>\n")
-		P("        <textarea id=\"content\" name=\"content\">%s</textarea>\n", escape(jp.content))
+		P("        <textarea id=\"content\" name=\"content\">%s</textarea>\n", escape(tp.content))
 	}
 	P("    </div>\n")
 	P("    <div>\n")
 	if fvalidate && zresult == Z_URL_EXISTS {
 		P("        <label for=\"url\">URL already exists, enter another one</label>\n")
-		P("        <input id=\"url\" class=\"highlight\" name=\"url\" autofocus value=\"%s\">\n", escape(jp.url))
+		P("        <input id=\"url\" class=\"highlight\" name=\"url\" autofocus value=\"%s\">\n", escape(tp.url))
 	} else {
 		P("        <label for=\"url\">Custom URL</label>\n")
-		P("        <input id=\"url\" name=\"url\" value=\"%s\">\n", escape(jp.url))
+		P("        <input id=\"url\" name=\"url\" value=\"%s\">\n", escape(tp.url))
 	}
 	P("    </div>\n")
 	P("    <div>\n")
-	if fvalidate && editcode != jp.editcode {
+	if fvalidate && editcode != tp.editcode {
 		P("        <label for=\"editcode\">Incorrect edit code, please re-enter</label>\n")
 		P("        <input id=\"editcode\" class=\"highlight\" autofocus name=\"editcode\" value=\"%s\">\n", escape(editcode))
 	} else {
@@ -511,19 +525,19 @@ func print_edit_page_form(P PrintFunc, jp *JotiPage, actionpath string, fvalidat
 		P("        <input id=\"editcode\" name=\"editcode\" value=\"%s\">\n", escape(editcode))
 	}
 	P("    </div>\n")
-	P("    <div class=\"jotiform_save\">\n")
+	P("    <div class=\"txtpageform_save\">\n")
 	P("        <button type=\"submit\">Save Page</button>\n")
 	P("    </div>\n")
 	P("</form>\n")
 	html_print_close(P)
 }
 
-func print_save_page_success(P PrintFunc, jp *JotiPage, r *http.Request) {
-	href_link := fmt.Sprintf("/%s", jp.url)
-	edit_href_link := fmt.Sprintf("/%s/edit", jp.url)
+func print_save_page_success(P PrintFunc, tp *TxtPage, r *http.Request) {
+	href_link := fmt.Sprintf("/%s", tp.url)
+	edit_href_link := fmt.Sprintf("/%s/edit", tp.url)
 
-	page_name := fmt.Sprintf("%s/%s", r.Host, jp.url)
-	edit_page_name := fmt.Sprintf("%s/%s/edit", r.Host, jp.url)
+	page_name := fmt.Sprintf("%s/%s", r.Host, tp.url)
+	edit_page_name := fmt.Sprintf("%s/%s/edit", r.Host, tp.url)
 
 	html_print_open(P, "Success", "", "")
 	P("<h2>You made a page.</h2>\n")
@@ -532,8 +546,8 @@ func print_save_page_success(P PrintFunc, jp *JotiPage, r *http.Request) {
 	P("<p>Edit your page here:</p>\n")
 	P("<p><a href=\"%s\">%s</a></p>", edit_href_link, edit_page_name)
 	P("<p>You will need this code to make changes to this page in the future:</p>\n")
-	P("<p>Your edit code: <b>%s</b></p>\n", jp.editcode)
+	P("<p>Your edit code: <b>%s</b></p>\n", tp.editcode)
 	P("<p>You must keep this info safe (and bookmarking this page won't work). It cannot be accessed again!</p>\n")
-	print_joti_footer(P)
+	print_footer(P)
 	html_print_close(P)
 }

@@ -11,16 +11,16 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type JotiPage struct {
-	jotipage_id int64
-	title       string
-	url         string
-	content     string
-	desc        string
-	author      string
-	editcode    string
-	createdt    string
-	lastreaddt  string
+type TxtPage struct {
+	txtpage_id int64
+	title      string
+	url        string
+	content    string
+	desc       string
+	author     string
+	editcode   string
+	createdt   string
+	lastreaddt string
 }
 
 type Z int
@@ -59,8 +59,8 @@ func create_tables(dbfile string) error {
 	}
 
 	ss := []string{
-		`CREATE TABLE jotipage (
-	jotipage_id INTEGER PRIMARY KEY NOT NULL,
+		`CREATE TABLE txtpage (
+	txtpage_id INTEGER PRIMARY KEY NOT NULL,
 	title TEXT NOT NULL DEFAULT '',
 	url TEXT UNIQUE NOT NULL,
 	content TEXT NOT NULL DEFAULT '',
@@ -70,8 +70,8 @@ func create_tables(dbfile string) error {
 	createdt TEXT NOT NULL,
 	lastreaddt TEXT NOT NULL
 );`,
-		`INSERT INTO jotipage (
-	jotipage_id,
+		`INSERT INTO txtpage (
+	txtpage_id,
 	title,
 	url,
 	content,
@@ -111,28 +111,28 @@ VALUES(
 	return nil
 }
 
-func find_jotipage_by_id(db *sql.DB, id int64, jp *JotiPage) Z {
-	s := "SELECT jotipage_id, title, url, content, desc, author, editcode, createdt, lastreaddt FROM jotipage WHERE jotipage_id = ?"
+func find_txtpage_by_id(db *sql.DB, id int64, tp *TxtPage) Z {
+	s := "SELECT txtpage_id, title, url, content, desc, author, editcode, createdt, lastreaddt FROM txtpage WHERE txtpage_id = ?"
 	row := db.QueryRow(s, id)
-	err := row.Scan(&jp.jotipage_id, &jp.title, &jp.url, &jp.content, &jp.desc, &jp.author, &jp.editcode, &jp.createdt, &jp.lastreaddt)
+	err := row.Scan(&tp.txtpage_id, &tp.title, &tp.url, &tp.content, &tp.desc, &tp.author, &tp.editcode, &tp.createdt, &tp.lastreaddt)
 	if err == sql.ErrNoRows {
 		return Z_NOT_FOUND
 	}
 	if err != nil {
-		logerr("find_jotipage_by_id", err)
+		logerr("find_txtpage_by_id", err)
 		return Z_DBERR
 	}
 	return Z_OK
 }
-func find_jotipage_by_url(db *sql.DB, url string, jp *JotiPage) Z {
-	s := "SELECT jotipage_id, title, url, content, desc, author, editcode, createdt, lastreaddt FROM jotipage WHERE url = ?"
+func find_txtpage_by_url(db *sql.DB, url string, tp *TxtPage) Z {
+	s := "SELECT txtpage_id, title, url, content, desc, author, editcode, createdt, lastreaddt FROM txtpage WHERE url = ?"
 	row := db.QueryRow(s, url)
-	err := row.Scan(&jp.jotipage_id, &jp.title, &jp.url, &jp.content, &jp.desc, &jp.author, &jp.editcode, &jp.createdt, &jp.lastreaddt)
+	err := row.Scan(&tp.txtpage_id, &tp.title, &tp.url, &tp.content, &tp.desc, &tp.author, &tp.editcode, &tp.createdt, &tp.lastreaddt)
 	if err == sql.ErrNoRows {
 		return Z_NOT_FOUND
 	}
 	if err != nil {
-		logerr("find_jotipage_by_url", err)
+		logerr("find_txtpage_by_url", err)
 		return Z_DBERR
 	}
 	return Z_OK
@@ -158,49 +158,49 @@ func content_to_desc(content string) string {
 	return desc
 }
 
-func create_jotipage(db *sql.DB, jp *JotiPage) Z {
-	if jp.url != "" && jotipage_url_exists(db, jp.url, 0) {
+func create_txtpage(db *sql.DB, tp *TxtPage) Z {
+	if tp.url != "" && txtpage_url_exists(db, tp.url, 0) {
 		return Z_URL_EXISTS
 	}
-	if match_stock_page(jp.url, stock_pages) != nil {
+	if match_stock_page(tp.url, stock_pages) != nil {
 		return Z_URL_EXISTS
 	}
-	if jp.createdt == "" {
-		jp.createdt = nowdate()
+	if tp.createdt == "" {
+		tp.createdt = nowdate()
 	}
-	if jp.lastreaddt == "" {
-		jp.lastreaddt = jp.createdt
+	if tp.lastreaddt == "" {
+		tp.lastreaddt = tp.createdt
 	}
-	if jp.editcode == "" {
-		jp.editcode = random_editcode()
+	if tp.editcode == "" {
+		tp.editcode = random_editcode()
 	}
 
 	var s string
 	var result sql.Result
 	var err error
 
-	if jp.url == "" {
+	if tp.url == "" {
 		// Generate unique url if no url specified.
-		s = "INSERT INTO jotipage (title, content, desc, author, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ? || (SELECT IFNULL(MAX(jotipage_id), 0)+1 FROM jotipage))"
-		result, err = sqlexec(db, s, jp.title, jp.content, jp.desc, jp.author, jp.editcode, jp.createdt, jp.lastreaddt, base_url_from_title(jp.title))
+		s = "INSERT INTO txtpage (title, content, desc, author, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ?, ?, ? || (SELECT IFNULL(MAX(txtpage_id), 0)+1 FROM txtpage))"
+		result, err = sqlexec(db, s, tp.title, tp.content, tp.desc, tp.author, tp.editcode, tp.createdt, tp.lastreaddt, base_url_from_title(tp.title))
 	} else {
-		s = "INSERT INTO jotipage (title, content, desc, author, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ?)"
-		result, err = sqlexec(db, s, jp.title, jp.content, jp.desc, jp.author, jp.editcode, jp.createdt, jp.lastreaddt, jp.url)
+		s = "INSERT INTO txtpage (title, content, desc, author, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+		result, err = sqlexec(db, s, tp.title, tp.content, tp.desc, tp.author, tp.editcode, tp.createdt, tp.lastreaddt, tp.url)
 	}
 	if err != nil {
-		logerr("create_jotipage", err)
+		logerr("create_txtpage", err)
 		return Z_DBERR
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
-		logerr("create_jotipage", err)
+		logerr("create_txtpage", err)
 		return Z_DBERR
 	}
-	jp.jotipage_id = id
+	tp.txtpage_id = id
 
 	// If url was autogen, load the page we just created to retrieve the url.
-	if jp.url == "" {
-		z := find_jotipage_by_id(db, id, jp)
+	if tp.url == "" {
+		z := find_txtpage_by_id(db, id, tp)
 		if z != Z_OK {
 			return z
 		}
@@ -208,42 +208,42 @@ func create_jotipage(db *sql.DB, jp *JotiPage) Z {
 	return Z_OK
 }
 
-func edit_jotipage(db *sql.DB, jp *JotiPage, editcode string) Z {
-	if editcode != jp.editcode {
+func edit_txtpage(db *sql.DB, tp *TxtPage, editcode string) Z {
+	if editcode != tp.editcode {
 		return Z_WRONG_EDITCODE
 	}
-	if jp.url != "" && jotipage_url_exists(db, jp.url, jp.jotipage_id) {
+	if tp.url != "" && txtpage_url_exists(db, tp.url, tp.txtpage_id) {
 		return Z_URL_EXISTS
 	}
-	if match_stock_page(jp.url, stock_pages) != nil {
+	if match_stock_page(tp.url, stock_pages) != nil {
 		return Z_URL_EXISTS
 	}
-	if jp.createdt == "" {
-		jp.createdt = nowdate()
+	if tp.createdt == "" {
+		tp.createdt = nowdate()
 	}
-	jp.lastreaddt = nowdate()
-	if jp.editcode == "" {
-		jp.editcode = random_editcode()
+	tp.lastreaddt = nowdate()
+	if tp.editcode == "" {
+		tp.editcode = random_editcode()
 	}
-	if jp.url == "" {
+	if tp.url == "" {
 		// Generate unique url if no url specified.
-		jp.url = fmt.Sprintf("%s%d", base_url_from_title(jp.title), jp.jotipage_id)
+		tp.url = fmt.Sprintf("%s%d", base_url_from_title(tp.title), tp.txtpage_id)
 	}
 
-	s := "UPDATE jotipage SET title = ?, content = ?, desc = ?, author = ?, editcode = ?, lastreaddt = ?, url = ? WHERE jotipage_id = ?"
-	_, err := sqlexec(db, s, jp.title, jp.content, jp.desc, jp.author, jp.editcode, jp.lastreaddt, jp.url, jp.jotipage_id)
+	s := "UPDATE txtpage SET title = ?, content = ?, desc = ?, author = ?, editcode = ?, lastreaddt = ?, url = ? WHERE txtpage_id = ?"
+	_, err := sqlexec(db, s, tp.title, tp.content, tp.desc, tp.author, tp.editcode, tp.lastreaddt, tp.url, tp.txtpage_id)
 	if err != nil {
-		logerr("edit_jotipage", err)
+		logerr("edit_txtpage", err)
 		return Z_DBERR
 	}
 	return Z_OK
 }
 
-func touch_jotipage_by_url(db *sql.DB, url string) Z {
-	s := "UPDATE jotipage SET lastreaddt = ? WHERE url = ?"
+func touch_txtpage_by_url(db *sql.DB, url string) Z {
+	s := "UPDATE txtpage SET lastreaddt = ? WHERE url = ?"
 	_, err := sqlexec(db, s, nowdate(), url)
 	if err != nil {
-		logerr("touch_jotipage_by_url", err)
+		logerr("touch_txtpage_by_url", err)
 		return Z_DBERR
 	}
 	return Z_OK
@@ -263,38 +263,38 @@ func base_url_from_title(title string) string {
 	return url
 }
 
-// Return true if url exists in a previous jotipage row.
-// Exclude row containing exclude_jotipage_id in the check.
-func jotipage_url_exists(db *sql.DB, url string, exclude_jotipage_id int64) bool {
-	s := "SELECT jotipage_id FROM jotipage WHERE url = ? AND jotipage_id <> ?"
-	row := db.QueryRow(s, url, exclude_jotipage_id)
+// Return true if url exists in a previous txtpage row.
+// Exclude row containing exclude_txtpage_id in the check.
+func txtpage_url_exists(db *sql.DB, url string, exclude_txtpage_id int64) bool {
+	s := "SELECT txtpage_id FROM txtpage WHERE url = ? AND txtpage_id <> ?"
+	row := db.QueryRow(s, url, exclude_txtpage_id)
 	var tmpid int64
 	err := row.Scan(&tmpid)
 	if err == sql.ErrNoRows {
 		return false
 	}
 	if err != nil {
-		logerr("jotipage_url_exists", err)
+		logerr("txtpage_url_exists", err)
 	}
 	return true
 }
 
-// Delete jotipages with lastreaddt before specified duration
+// Delete txtpages with lastreaddt before specified duration
 // Ex.
 // Delete with lastreaddt older than 60 seconds
-// delete_jotipages_before_duration(60 * time.Second)
+// delete_txtpages_before_duration(60 * time.Second)
 //
 // Delete with lastreaddt older than 60 days
-// delete_jotipages_before_duration(60 * time.Hour * 24)
-func delete_jotipages_before_duration(db *sql.DB, d time.Duration) Z {
+// delete_txtpages_before_duration(60 * time.Hour * 24)
+func delete_txtpages_before_duration(db *sql.DB, d time.Duration) Z {
 	var err error
 	cutoffdt := isodate(time.Now().Add(-d))
-	logprint("Deleting jotipages older than %s\n", cutoffdt)
+	logprint("Deleting txtpages older than %s\n", cutoffdt)
 
-	s1 := "SELECT jotipage_id, title, lastreaddt FROM jotipage WHERE lastreaddt < ?"
+	s1 := "SELECT txtpage_id, title, lastreaddt FROM txtpage WHERE lastreaddt < ?"
 	rows, err := db.Query(s1, cutoffdt)
 	if err != nil {
-		logerr("delete_jotipages_before_duration", err)
+		logerr("delete_txtpages_before_duration", err)
 		return Z_DBERR
 	}
 	defer rows.Close()
@@ -305,10 +305,10 @@ func delete_jotipages_before_duration(db *sql.DB, d time.Duration) Z {
 		logprint("***  %s %d %s\n", lastreaddt, id, title)
 	}
 
-	s := "DELETE FROM jotipage WHERE lastreaddt < ?"
+	s := "DELETE FROM txtpage WHERE lastreaddt < ?"
 	_, err = sqlexec(db, s, cutoffdt)
 	if err != nil {
-		logerr("delete_jotipages_before_duration", err)
+		logerr("delete_txtpages_before_duration", err)
 		return Z_DBERR
 	}
 	return Z_OK

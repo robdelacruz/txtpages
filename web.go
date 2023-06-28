@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"regexp"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
@@ -56,17 +55,6 @@ func escape(s string) string {
 func unescape(s string) string {
 	return html.UnescapeString(s)
 }
-func sanitize_jotipage_url(url string) string {
-	// Replace whitespace with "_"
-	re := regexp.MustCompile(`\s+`)
-	url = re.ReplaceAllString(url, "_")
-
-	// Remove all chars not matching alphanumeric, '_', '-' chars
-	re = regexp.MustCompile(`[^\w\-]`)
-	url = re.ReplaceAllString(url, "")
-
-	return url
-}
 
 func handleErr(w http.ResponseWriter, err error, sfunc string) {
 	log.Printf("%s: server error (%s)\n", sfunc, err)
@@ -95,7 +83,7 @@ func logErr(sfunc string, err error) {
 	log.Printf("%s error (%s)\n", sfunc, err)
 }
 
-//*** HTML template functions ***
+// *** HTML template functions ***
 func html_print_open(P PrintFunc, title, desc, author string) {
 	P("<!DOCTYPE html>\n")
 	P("<html>\n")
@@ -120,7 +108,7 @@ func html_print_close(P PrintFunc) {
 	P("</html>\n")
 }
 
-//*** Cookie functions ***
+// *** Cookie functions ***
 func setCookie(w http.ResponseWriter, name, val string) {
 	c := http.Cookie{
 		Name:  name,

@@ -34,7 +34,7 @@ img {
     a:visited { 
         color: #8e96f0
     }
-    .jotiform_error {
+    .txtpageform_error {
         color: black;
     }
 }
@@ -66,37 +66,37 @@ input, textarea, button {
     margin: 50px 0;
     border-top: #444 1px solid;
 }
-.jotiform {
+.txtpageform {
 }
-.jotiform > div {
+.txtpageform > div {
     margin: 0.5rem 0;
 }
-.jotiform label {
+.txtpageform label {
     display: block;
 }
-.jotiform input, .jotiform textarea {
+.txtpageform input, .txtpageform textarea {
     display: block;
     width: 100%;
 }
-.jotiform textarea {
+.txtpageform textarea {
     height: 200px;
 }
-.jotiform button {
+.txtpageform button {
     padding: 0 1rem;
 }
-.jotiform_save {
+.txtpageform_save {
     padding: 1rem 0;
     text-align: center;
 }
-.jotiform_save button {
+.txtpageform_save button {
     font-weight: bold;
 }
-.jotiform_error {
+.txtpageform_error {
     padding: 1px 0;
     background-color: lightgray;
     text-align: center;
 }
-.jotiform .highlight {
+.txtpageform .highlight {
     border: 2px solid gold;
     border-radius: 7px;
     outline: none;

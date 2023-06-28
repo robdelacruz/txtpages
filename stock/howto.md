@@ -1,6 +1,6 @@
-# Joti How-to
+# TxtPages How-to
 
-Give your webpage a **title**. This will appear as the page title and top heading. 
+Give your txtpage a **title**. This will appear as the page title and top heading. 
 
 Optionally specify a **custom url** that will be part of the web page link. If you don't specify a custom url, one will be generated for you.
 
@@ -41,7 +41,7 @@ Numbered lists:
 [Markdown Reference](https://commonmark.org/help/)
 
 
-## Webpage cleanup
+## TxtPage cleanup
 
-Pages that haven't been viewed in 6 months will be deleted.
+TxtPages that haven't been viewed in 6 months will be deleted.
 

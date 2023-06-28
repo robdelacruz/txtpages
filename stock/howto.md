@@ -1,47 +1,101 @@
 # TxtPages How-to
 
-Give your txtpage a **title**. This will appear as the page title and top heading. 
+A quick guide to creating a txtpage.
 
-Optionally specify a **custom url** that will be part of the web page link. If you don't specify a custom url, one will be generated for you.
+## Creating a basic txtpage 
 
-Optionally specify an **edit code**. You need to enter this code when you make changes to the page. This code can't be retrieved, so you need to write it down somewhere.
+>Enter a **Title** for your txtpage.
+>
+>Enter some text in the **Content** box.
+>
+>Click **Create Page**.
+>
+>That's it!
 
-Enter web page **content** in plain text using markdown syntax. Below is a quick cheat sheet on how to use Markdown:
 
-## Markdown Syntax
+## Specifying a url for your txtpage
 
-Headings:    
-\# Primary heading  
-\#\# Secondary heading  
-\#\#\# Subheading, and so on.  
+>Enter some text in the **Custom URL** box (for example: "cathome").
+>
+>Your txtpage can then be accessed via the link *txtpages.xyz/cathome* .
+>
+>You will be prompted to enter a different custom url if it used previously.
 
-Use an empty line to separate paragraphs from each other. This is the first paragraph.
 
-And this is the next paragraph. With a blank line separating it from the previous paragraph.
+## Specifying a passcode for your txtpage
 
-\**italic text*\*  
-\*\***bold text**\*\*  
+> A passcode is needed to edit an existing txtpage. 
+>
+>Enter the passcode you want to set in the **Passcode** box (for example: "password123") . If you leave the passcode box blank, then a random passcode will be generated for you.
+>
+>Write down the passcode or email it to yourself.
 
-Define links to other pages:  
-\[This is a link\]\(http://txti.es\)  
 
-Embed an image:  
-\!\[image alt text\]\(http://https://i.imgur.com/WUtsRM9.png\)  
+## Editing an existing txtpage
 
-Bulleted lists:  
-\- eggs  
-\- milk  
-\- flour  
+>To edit an existing txtpage, you need to know its url and passcode. For instance, to edit a txtpage with the url "cathome", access the following link: *txtpages.xyz/cathome/edit* .
+>
+>You will be able to edit any of the txtpage content. Enter the correct passcode to save changes.
 
-Numbered lists:  
-1\. eggs  
-2\. milk  
-3\. flour  
 
-[Markdown Reference](https://commonmark.org/help/)
+## Creating a heading
+
+>TxtPage contents are formatted using [Markdown syntax](https://www.markdownguide.org/basic-syntax/#overview) .
+>
+>To create a heading, use the following formatting:
+>
+>```
+># Primary Heading
+>## Secondary Heading
+>### Smaller Heading
+>#### Even smaller heading
+>```
+
+
+## Formatting paragraphs
+
+>Leave an empty line in between paragraphs.
+>
+>To start a new line (without starting a new paragraph), add two spaces at the end of the line.
+>
+
+
+## Formatting text
+
+>Use the following formatting for bold and italic text:
+>
+>Add one asterisk before and after for \**italic text*\*.  
+>Add two asterisks before and after for \*\***bold text**\*\*.
+
+
+## Adding web links
+
+>Use the following formatting to add a web link:
+>
+>\[This is a link\]\(https://txtpages.xyz\)  
+
+
+## Linking to an image
+
+>Use the following to link to an image:
+>
+>\!\[image alt text\]\(http://txtpages.xyz/logo.png\)  
+
+
+## Creating lists:
+
+>Bulleted lists:  
+>\- eggs  
+>\- milk  
+>\- flour  
+>
+>Numbered lists:  
+>1\. eggs  
+>2\. milk  
+>3\. flour  
 
 
 ## TxtPage cleanup
 
-TxtPages that haven't been viewed in 6 months will be deleted.
+>TxtPages that haven't been viewed in 6 months will be deleted.
 

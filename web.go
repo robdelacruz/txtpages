@@ -12,6 +12,7 @@ import (
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
 )
 
 type HtmlMeta struct {
@@ -138,6 +139,10 @@ func readCookie(r *http.Request, name string) string {
 func create_goldmark_interface() goldmark.Markdown {
 	return goldmark.New(
 		goldmark.WithExtensions(extension.GFM),
+		goldmark.WithParserOptions(
+			parser.WithAutoHeadingID(),
+		),
+		goldmark.WithRendererOptions(),
 	)
 }
 

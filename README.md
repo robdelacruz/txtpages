@@ -8,11 +8,13 @@ TxtPages will always be free and open source. Feel free to copy the code and dep
 
 ## Build and Install
 
->$ make dep
->$ make
->$ ./txtpages -i pages.db
->
->Run 'txtpages pages.db' to start the web service.
+```
+$ make dep
+$ make
+$ ./txtpages -i pages.db
+
+Run 'txtpages pages.db' to start the web service.
+```
 
 TxtPages uses a single sqlitie3 database file to store all txtpages.
 
@@ -23,6 +25,8 @@ TxtPages uses a single sqlitie3 database file to store all txtpages.
 
 ## Contact
 
->Twitter: @robcomputing
->Source: https://github.com/robdelacruz/txtpages
+```
+Twitter: @robcomputing
+Source: https://github.com/robdelacruz/txtpages
+```
 

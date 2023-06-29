@@ -18,7 +18,7 @@ type TxtPage struct {
 	content    string
 	desc       string
 	author     string
-	editcode   string
+	passcode   string
 	createdt   string
 	lastreaddt string
 }
@@ -30,7 +30,7 @@ const (
 	Z_DBERR
 	Z_URL_EXISTS
 	Z_NOT_FOUND
-	Z_WRONG_EDITCODE
+	Z_WRONG_PASSCODE
 )
 
 func (z Z) Error() string {
@@ -42,8 +42,8 @@ func (z Z) Error() string {
 		return "URL exists"
 	} else if z == Z_NOT_FOUND {
 		return "Not found"
-	} else if z == Z_WRONG_EDITCODE {
-		return "Incorrect edit code"
+	} else if z == Z_WRONG_PASSCODE {
+		return "Incorrect passcode"
 	}
 	return "Unknown error"
 }
@@ -66,7 +66,7 @@ func create_tables(dbfile string) error {
 	content TEXT NOT NULL DEFAULT '',
 	desc TEXT NOT NULL DEFAULT '',
 	author TEXT NOT NULL DEFAULT '',
-	editcode TEXT NOT NULL DEFAULT '',
+	passcode TEXT NOT NULL DEFAULT '',
 	createdt TEXT NOT NULL,
 	lastreaddt TEXT NOT NULL
 );`,
@@ -75,7 +75,7 @@ func create_tables(dbfile string) error {
 	title,
 	url,
 	content,
-	editcode,
+	passcode,
 	desc,
 	author,
 	createdt,
@@ -112,9 +112,9 @@ VALUES(
 }
 
 func find_txtpage_by_id(db *sql.DB, id int64, tp *TxtPage) Z {
-	s := "SELECT txtpage_id, title, url, content, desc, author, editcode, createdt, lastreaddt FROM txtpage WHERE txtpage_id = ?"
+	s := "SELECT txtpage_id, title, url, content, desc, author, passcode, createdt, lastreaddt FROM txtpage WHERE txtpage_id = ?"
 	row := db.QueryRow(s, id)
-	err := row.Scan(&tp.txtpage_id, &tp.title, &tp.url, &tp.content, &tp.desc, &tp.author, &tp.editcode, &tp.createdt, &tp.lastreaddt)
+	err := row.Scan(&tp.txtpage_id, &tp.title, &tp.url, &tp.content, &tp.desc, &tp.author, &tp.passcode, &tp.createdt, &tp.lastreaddt)
 	if err == sql.ErrNoRows {
 		return Z_NOT_FOUND
 	}
@@ -125,9 +125,9 @@ func find_txtpage_by_id(db *sql.DB, id int64, tp *TxtPage) Z {
 	return Z_OK
 }
 func find_txtpage_by_url(db *sql.DB, url string, tp *TxtPage) Z {
-	s := "SELECT txtpage_id, title, url, content, desc, author, editcode, createdt, lastreaddt FROM txtpage WHERE url = ?"
+	s := "SELECT txtpage_id, title, url, content, desc, author, passcode, createdt, lastreaddt FROM txtpage WHERE url = ?"
 	row := db.QueryRow(s, url)
-	err := row.Scan(&tp.txtpage_id, &tp.title, &tp.url, &tp.content, &tp.desc, &tp.author, &tp.editcode, &tp.createdt, &tp.lastreaddt)
+	err := row.Scan(&tp.txtpage_id, &tp.title, &tp.url, &tp.content, &tp.desc, &tp.author, &tp.passcode, &tp.createdt, &tp.lastreaddt)
 	if err == sql.ErrNoRows {
 		return Z_NOT_FOUND
 	}
@@ -138,7 +138,7 @@ func find_txtpage_by_url(db *sql.DB, url string, tp *TxtPage) Z {
 	return Z_OK
 }
 
-func random_editcode() string {
+func random_passcode() string {
 	return edit_words[rand.Intn(len(edit_words))]
 }
 
@@ -171,8 +171,8 @@ func create_txtpage(db *sql.DB, tp *TxtPage) Z {
 	if tp.lastreaddt == "" {
 		tp.lastreaddt = tp.createdt
 	}
-	if tp.editcode == "" {
-		tp.editcode = random_editcode()
+	if tp.passcode == "" {
+		tp.passcode = random_passcode()
 	}
 
 	var s string
@@ -181,11 +181,11 @@ func create_txtpage(db *sql.DB, tp *TxtPage) Z {
 
 	if tp.url == "" {
 		// Generate unique url if no url specified.
-		s = "INSERT INTO txtpage (title, content, desc, author, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ?, ?, ? || (SELECT IFNULL(MAX(txtpage_id), 0)+1 FROM txtpage))"
-		result, err = sqlexec(db, s, tp.title, tp.content, tp.desc, tp.author, tp.editcode, tp.createdt, tp.lastreaddt, base_url_from_title(tp.title))
+		s = "INSERT INTO txtpage (title, content, desc, author, passcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ?, ?, ? || (SELECT IFNULL(MAX(txtpage_id), 0)+1 FROM txtpage))"
+		result, err = sqlexec(db, s, tp.title, tp.content, tp.desc, tp.author, tp.passcode, tp.createdt, tp.lastreaddt, base_url_from_title(tp.title))
 	} else {
-		s = "INSERT INTO txtpage (title, content, desc, author, editcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-		result, err = sqlexec(db, s, tp.title, tp.content, tp.desc, tp.author, tp.editcode, tp.createdt, tp.lastreaddt, tp.url)
+		s = "INSERT INTO txtpage (title, content, desc, author, passcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+		result, err = sqlexec(db, s, tp.title, tp.content, tp.desc, tp.author, tp.passcode, tp.createdt, tp.lastreaddt, tp.url)
 	}
 	if err != nil {
 		logerr("create_txtpage", err)
@@ -208,9 +208,9 @@ func create_txtpage(db *sql.DB, tp *TxtPage) Z {
 	return Z_OK
 }
 
-func edit_txtpage(db *sql.DB, tp *TxtPage, editcode string) Z {
-	if editcode != tp.editcode {
-		return Z_WRONG_EDITCODE
+func edit_txtpage(db *sql.DB, tp *TxtPage, passcode string) Z {
+	if passcode != tp.passcode {
+		return Z_WRONG_PASSCODE
 	}
 	if tp.url != "" && txtpage_url_exists(db, tp.url, tp.txtpage_id) {
 		return Z_URL_EXISTS
@@ -222,16 +222,16 @@ func edit_txtpage(db *sql.DB, tp *TxtPage, editcode string) Z {
 		tp.createdt = nowdate()
 	}
 	tp.lastreaddt = nowdate()
-	if tp.editcode == "" {
-		tp.editcode = random_editcode()
+	if tp.passcode == "" {
+		tp.passcode = random_passcode()
 	}
 	if tp.url == "" {
 		// Generate unique url if no url specified.
 		tp.url = fmt.Sprintf("%s%d", base_url_from_title(tp.title), tp.txtpage_id)
 	}
 
-	s := "UPDATE txtpage SET title = ?, content = ?, desc = ?, author = ?, editcode = ?, lastreaddt = ?, url = ? WHERE txtpage_id = ?"
-	_, err := sqlexec(db, s, tp.title, tp.content, tp.desc, tp.author, tp.editcode, tp.lastreaddt, tp.url, tp.txtpage_id)
+	s := "UPDATE txtpage SET title = ?, content = ?, desc = ?, author = ?, passcode = ?, lastreaddt = ?, url = ? WHERE txtpage_id = ?"
+	_, err := sqlexec(db, s, tp.title, tp.content, tp.desc, tp.author, tp.passcode, tp.lastreaddt, tp.url, tp.txtpage_id)
 	if err != nil {
 		logerr("edit_txtpage", err)
 		return Z_DBERR

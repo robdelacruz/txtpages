@@ -275,7 +275,7 @@ func (server *Server) new_handler(w http.ResponseWriter, r *http.Request) {
 		tp.title = strings.TrimSpace(r.FormValue("title"))
 		tp.content = strings.TrimSpace(r.FormValue("content"))
 		tp.url = sanitize_txtpage_url(strings.TrimSpace(r.FormValue("url")))
-		tp.editcode = strings.TrimSpace(r.FormValue("editcode"))
+		tp.passcode = strings.TrimSpace(r.FormValue("passcode"))
 
 		for {
 			if tp.title == "" || tp.content == "" {
@@ -298,7 +298,7 @@ func (server *Server) new_handler(w http.ResponseWriter, r *http.Request) {
 func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, url string) {
 	var z Z
 	var tp TxtPage
-	var editcode string
+	var passcode string
 	var fvalidate bool
 
 	w.Header().Set("Content-Type", "text/html")
@@ -324,14 +324,14 @@ func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, url s
 		tp.title = strings.TrimSpace(r.FormValue("title"))
 		tp.content = strings.TrimSpace(r.FormValue("content"))
 		tp.url = sanitize_txtpage_url(strings.TrimSpace(r.FormValue("url")))
-		editcode = strings.TrimSpace(r.FormValue("editcode"))
+		passcode = strings.TrimSpace(r.FormValue("passcode"))
 
 		for {
-			if tp.title == "" || tp.content == "" || editcode != tp.editcode {
+			if tp.title == "" || tp.content == "" || passcode != tp.passcode {
 				fvalidate = true
 				break
 			}
-			z = edit_txtpage(server.db, &tp, editcode)
+			z = edit_txtpage(server.db, &tp, passcode)
 			if z != Z_OK {
 				fvalidate = true
 				break
@@ -341,7 +341,7 @@ func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, url s
 		}
 	}
 
-	print_edit_page_form(P, &tp, r.URL.Path, fvalidate, z, editcode)
+	print_edit_page_form(P, &tp, r.URL.Path, fvalidate, z, passcode)
 }
 
 func sanitize_txtpage_url(url string) string {
@@ -461,8 +461,8 @@ func print_create_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalida
 	}
 	P("    </div>\n")
 	P("    <div>\n")
-	P("        <label for=\"editcode\">Custom edit code (optional)</label>\n")
-	P("        <input id=\"editcode\" name=\"editcode\" value=\"%s\">\n", escape(tp.editcode))
+	P("        <label for=\"passcode\">Custom passcode (optional)</label>\n")
+	P("        <input id=\"passcode\" name=\"passcode\" value=\"%s\">\n", escape(tp.passcode))
 	P("    </div>\n")
 	P("    <div class=\"txtpageform_save\">\n")
 	P("        <button type=\"submit\">Create Page</button>\n")
@@ -471,7 +471,7 @@ func print_create_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalida
 	html_print_close(P)
 }
 
-func print_edit_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalidate bool, zresult Z, editcode string) {
+func print_edit_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalidate bool, zresult Z, passcode string) {
 	var errmsg string
 
 	if fvalidate {
@@ -517,12 +517,12 @@ func print_edit_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalidate
 	}
 	P("    </div>\n")
 	P("    <div>\n")
-	if fvalidate && editcode != tp.editcode {
-		P("        <label for=\"editcode\">Incorrect edit code, please re-enter</label>\n")
-		P("        <input id=\"editcode\" class=\"highlight\" autofocus name=\"editcode\" value=\"%s\">\n", escape(editcode))
+	if fvalidate && passcode != tp.passcode {
+		P("        <label for=\"passcode\">Incorrect passcode, please re-enter</label>\n")
+		P("        <input id=\"passcode\" class=\"highlight\" autofocus name=\"passcode\" value=\"%s\">\n", escape(passcode))
 	} else {
-		P("        <label for=\"editcode\">Enter edit code</label>\n")
-		P("        <input id=\"editcode\" name=\"editcode\" value=\"%s\">\n", escape(editcode))
+		P("        <label for=\"passcode\">Enter passcode</label>\n")
+		P("        <input id=\"passcode\" name=\"passcode\" value=\"%s\">\n", escape(passcode))
 	}
 	P("    </div>\n")
 	P("    <div class=\"txtpageform_save\">\n")
@@ -539,15 +539,14 @@ func print_save_page_success(P PrintFunc, tp *TxtPage, r *http.Request) {
 	page_name := fmt.Sprintf("%s/%s", r.Host, tp.url)
 	edit_page_name := fmt.Sprintf("%s/%s/edit", r.Host, tp.url)
 
-	html_print_open(P, "Success", "", "")
-	P("<h2>You made a page.</h2>\n")
-	P("<p>The link to your page is here:</p>\n")
-	P("<p><a href=\"%s\">%s</a></p>", href_link, page_name)
-	P("<p>Edit your page here:</p>\n")
-	P("<p><a href=\"%s\">%s</a></p>", edit_href_link, edit_page_name)
-	P("<p>You will need this code to make changes to this page in the future:</p>\n")
-	P("<p>Your edit code: <b>%s</b></p>\n", tp.editcode)
-	P("<p>You must keep this info safe (and bookmarking this page won't work). It cannot be accessed again!</p>\n")
+	html_print_open(P, "TxtPage Success", "", "")
+	P("<h2>TxtPage created!</h2>\n")
+	P("<p>Link to your txtpage:<br>\n")
+	P("<a href=\"%s\">%s</a></p>", href_link, page_name)
+	P("<p>Edit your txtpage:<br>\n")
+	P("<a href=\"%s\">%s</a></p>", edit_href_link, edit_page_name)
+	P("<p>Passcode: <strong><i>%s</i></strong></p>\n", tp.passcode)
+	P("<p>Memorize or write down your passcode and keep it somewhere safe.<br>You will need this when making changes to your txtpage.</p>\n")
 	print_footer(P)
 	html_print_close(P)
 }

@@ -30,11 +30,11 @@ That's it!
 
 ## Specifying a url for your txtpage
 
-Enter some text in the **Custom URL** box (for example: *cathome*).  
+Enter a unique text identifier in the **Set URL** box (for example: *cathome*).  
 
-Your txtpage can then be accessed via the link *txtpages.xyz/cathome* .  
+A url of *cathome* sets your txtpage to the link *txtpages.xyz/cathome* .  
 
-You will be prompted to enter a different custom url if it's being used by another page.
+You will be prompted to enter a different url if it's being used by another page.
 
 &nbsp;
 
@@ -42,7 +42,7 @@ You will be prompted to enter a different custom url if it's being used by anoth
 
 A passcode is needed to edit an existing txtpage. 
 
-Enter the passcode you want to set in the **Passcode** box (for example: *password123*) . If you leave the passcode box blank, then a random passcode will be generated for you.
+Enter the passcode you want to set in the **Set Passcode** box (for example: *password123*) . If you leave the passcode box blank, then a random passcode will be generated for you.
 
 Write down the passcode somewhere or email it to yourself.
 

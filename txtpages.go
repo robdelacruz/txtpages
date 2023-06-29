@@ -446,12 +446,12 @@ func print_create_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalida
 		P("        <label for=\"url\">URL already exists, enter another one</label>\n")
 		P("        <input id=\"url\" class=\"highlight\" name=\"url\" autofocus value=\"%s\">\n", escape(tp.url))
 	} else {
-		P("        <label for=\"url\">Custom URL (optional)</label>\n")
+		P("        <label for=\"url\">Set URL (optional)</label>\n")
 		P("        <input id=\"url\" name=\"url\" value=\"%s\">\n", escape(tp.url))
 	}
 	P("    </div>\n")
 	P("    <div>\n")
-	P("        <label for=\"passcode\">Custom passcode (optional)</label>\n")
+	P("        <label for=\"passcode\">Set passcode (optional)</label>\n")
 	P("        <input id=\"passcode\" name=\"passcode\" value=\"%s\">\n", escape(tp.passcode))
 	P("    </div>\n")
 	P("    <div class=\"txtpageform_save\">\n")
@@ -502,7 +502,7 @@ func print_edit_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalidate
 		P("        <label for=\"url\">URL already exists, enter another one</label>\n")
 		P("        <input id=\"url\" class=\"highlight\" name=\"url\" autofocus value=\"%s\">\n", escape(tp.url))
 	} else {
-		P("        <label for=\"url\">Custom URL</label>\n")
+		P("        <label for=\"url\">Set URL</label>\n")
 		P("        <input id=\"url\" name=\"url\" value=\"%s\">\n", escape(tp.url))
 	}
 	P("    </div>\n")

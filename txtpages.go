@@ -40,7 +40,9 @@ var stock_pages []StockPage
 var logprint LogPrintfFunc
 var logerr LogErrFunc
 
-const TXTPAGES_TITLE = "TxtPages - Create fast text web pages"
+const TXTPAGES_TITLE = "TxtPages - Create fast text webpages"
+const TXTPAGES_NAME = "TxtPages"
+const TXTPAGES_SLOGAN = "Create fast text webpages"
 const TXTPAGES_AUTHOR = "txtpages"
 
 func main() {
@@ -274,7 +276,7 @@ func (server *Server) new_handler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		tp.title = strings.TrimSpace(r.FormValue("title"))
 		tp.content = strings.TrimSpace(r.FormValue("content"))
-		tp.url = sanitize_txtpage_url(strings.TrimSpace(r.FormValue("url")))
+		tp.url = strings.TrimSpace(r.FormValue("url"))
 		tp.passcode = strings.TrimSpace(r.FormValue("passcode"))
 
 		for {
@@ -323,7 +325,7 @@ func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, url s
 	if r.Method == "POST" {
 		tp.title = strings.TrimSpace(r.FormValue("title"))
 		tp.content = strings.TrimSpace(r.FormValue("content"))
-		tp.url = sanitize_txtpage_url(strings.TrimSpace(r.FormValue("url")))
+		tp.url = strings.TrimSpace(r.FormValue("url"))
 		passcode = strings.TrimSpace(r.FormValue("passcode"))
 
 		for {
@@ -344,18 +346,6 @@ func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, url s
 	print_edit_page_form(P, &tp, r.URL.Path, fvalidate, z, passcode)
 }
 
-func sanitize_txtpage_url(url string) string {
-	// Replace whitespace with "_"
-	re := regexp.MustCompile(`\s+`)
-	url = re.ReplaceAllString(url, "_")
-
-	// Remove all chars not matching alphanumeric, '_', '-' chars
-	re = regexp.MustCompile(`[^\w\-]`)
-	url = re.ReplaceAllString(url, "")
-
-	return url
-}
-
 // print_titlebar(P, "header", "/", "home", "/", "about")
 func print_titlebar(P PrintFunc, classname string, ll ...string) {
 	// Must pass an even number of ll args (link/target pairs)
@@ -370,14 +360,14 @@ func print_titlebar(P PrintFunc, classname string, ll ...string) {
 }
 func print_header(P PrintFunc) {
 	P("<div class=\"titlebar header\">\n")
-	P("    <p><a href=\"/\">TxtPages</a> - Quickly create fast text web pages</p>\n")
+	P("    <p><a href=\"/\">%s</a> - %s</p>\n", TXTPAGES_NAME, TXTPAGES_SLOGAN)
 	P("    <p><a href=\"/about\">About</a></p>\n")
 	P("    <p><a href=\"/howto\">How to use</a></p>\n")
 	P("</div>\n")
 }
 func print_footer(P PrintFunc) {
 	P("<div class=\"titlebar footer\">\n")
-	P("    <p><a href=\"/\">TxtPages</a> - Quickly create fast text web pages</p>\n")
+	P("    <p><a href=\"/\">%s</a> - %s</p>\n", TXTPAGES_NAME, TXTPAGES_SLOGAN)
 	P("    <p><a href=\"/about\">About</a></p>\n")
 	P("    <p><a href=\"/howto\">How to use</a></p>\n")
 	P("</div>\n")

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/yuin/goldmark"
@@ -11,16 +12,20 @@ import (
 )
 
 func main() {
-	s := "string"
-	s2 := s[:4]
+	content :=
+		`Paragraph 1
 
-	desc_len := 200
-	content_len := len(s)
-	if content_len < desc_len {
-		desc_len = content_len
-	}
-	s3 := s[:desc_len]
-	fmt.Printf("s: '%s' s2: '%s' s3: '%s'\n", s, s2, s3)
+Paragraph 2
+
+Paragraph 3 with break
+Line 2`
+
+	// Replace line break with two spaces + line break
+	re := regexp.MustCompile("(\\S)\n(\\S)")
+	//content = re.ReplaceAllString(content, "$1__\n$2")
+	content = re.ReplaceAllString(content, "$1  \n$2")
+
+	fmt.Printf("content:\n%s\n", content)
 }
 
 func test_time() {

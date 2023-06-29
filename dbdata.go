@@ -159,6 +159,9 @@ func content_to_desc(content string) string {
 }
 
 func create_txtpage(db *sql.DB, tp *TxtPage) Z {
+	if tp.url != "" {
+		tp.url = sanitize_txtpage_url(tp.url)
+	}
 	if tp.url != "" && txtpage_url_exists(db, tp.url, 0) {
 		return Z_URL_EXISTS
 	}
@@ -174,6 +177,7 @@ func create_txtpage(db *sql.DB, tp *TxtPage) Z {
 	if tp.passcode == "" {
 		tp.passcode = random_passcode()
 	}
+	tp.content = process_content(tp.content)
 
 	var s string
 	var result sql.Result
@@ -182,7 +186,7 @@ func create_txtpage(db *sql.DB, tp *TxtPage) Z {
 	if tp.url == "" {
 		// Generate unique url if no url specified.
 		s = "INSERT INTO txtpage (title, content, desc, author, passcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ?, ?, ? || (SELECT IFNULL(MAX(txtpage_id), 0)+1 FROM txtpage))"
-		result, err = sqlexec(db, s, tp.title, tp.content, tp.desc, tp.author, tp.passcode, tp.createdt, tp.lastreaddt, base_url_from_title(tp.title))
+		result, err = sqlexec(db, s, tp.title, tp.content, tp.desc, tp.author, tp.passcode, tp.createdt, tp.lastreaddt, sanitize_txtpage_url(tp.title))
 	} else {
 		s = "INSERT INTO txtpage (title, content, desc, author, passcode, createdt, lastreaddt, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 		result, err = sqlexec(db, s, tp.title, tp.content, tp.desc, tp.author, tp.passcode, tp.createdt, tp.lastreaddt, tp.url)
@@ -212,6 +216,9 @@ func edit_txtpage(db *sql.DB, tp *TxtPage, passcode string) Z {
 	if passcode != tp.passcode {
 		return Z_WRONG_PASSCODE
 	}
+	if tp.url != "" {
+		tp.url = sanitize_txtpage_url(tp.url)
+	}
 	if tp.url != "" && txtpage_url_exists(db, tp.url, tp.txtpage_id) {
 		return Z_URL_EXISTS
 	}
@@ -227,8 +234,9 @@ func edit_txtpage(db *sql.DB, tp *TxtPage, passcode string) Z {
 	}
 	if tp.url == "" {
 		// Generate unique url if no url specified.
-		tp.url = fmt.Sprintf("%s%d", base_url_from_title(tp.title), tp.txtpage_id)
+		tp.url = fmt.Sprintf("%s%d", sanitize_txtpage_url(tp.title), tp.txtpage_id)
 	}
+	tp.content = process_content(tp.content)
 
 	s := "UPDATE txtpage SET title = ?, content = ?, desc = ?, author = ?, passcode = ?, lastreaddt = ?, url = ? WHERE txtpage_id = ?"
 	_, err := sqlexec(db, s, tp.title, tp.content, tp.desc, tp.author, tp.passcode, tp.lastreaddt, tp.url, tp.txtpage_id)
@@ -249,18 +257,26 @@ func touch_txtpage_by_url(db *sql.DB, url string) Z {
 	return Z_OK
 }
 
-func base_url_from_title(title string) string {
-	url := strings.TrimSpace(strings.ToLower(title))
+func sanitize_txtpage_url(url string) string {
+	url = strings.TrimSpace(strings.ToLower(url))
 
-	// Replace whitespace with underscore
-	re := regexp.MustCompile(`\s`)
+	// Replace whitespace with "_"
+	re := regexp.MustCompile(`\s+`)
 	url = re.ReplaceAllString(url, "_")
 
-	// Remove all chars not matching A-Za-z0-9_
-	re = regexp.MustCompile(`[^\w]`)
+	// Remove all chars not matching alphanumeric, '_', '-' chars
+	re = regexp.MustCompile(`[^\w\-]`)
 	url = re.ReplaceAllString(url, "")
 
 	return url
+}
+
+func process_content(content string) string {
+	// Replace line break with two spaces + line break
+	// Markdown will process end of line two spaces as <br>.
+	re := regexp.MustCompile("(\\S)\r?\n(\\S)")
+	content = re.ReplaceAllString(content, "$1  \n$2")
+	return content
 }
 
 // Return true if url exists in a previous txtpage row.

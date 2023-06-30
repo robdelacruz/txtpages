@@ -233,8 +233,7 @@ func edit_txtpage(db *sql.DB, tp *TxtPage, passcode string) Z {
 		tp.passcode = random_passcode()
 	}
 	if tp.url == "" {
-		// Generate unique url if no url specified.
-		tp.url = fmt.Sprintf("%s%d", sanitize_txtpage_url(tp.title), tp.txtpage_id)
+		tp.url = generate_url(tp)
 	}
 	tp.content = process_content(tp.content)
 
@@ -269,6 +268,11 @@ func sanitize_txtpage_url(url string) string {
 	url = re.ReplaceAllString(url, "")
 
 	return url
+}
+
+// Generate txtpage url: title + txtpage_id
+func generate_url(tp *TxtPage) string {
+	return fmt.Sprintf("%s%d", sanitize_txtpage_url(tp.title), tp.txtpage_id)
 }
 
 func process_content(content string) string {

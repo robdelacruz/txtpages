@@ -44,3 +44,16 @@ CREATE TABLE page (
 https://webdesign.tutsplus.com/tutorials/html5-form-validation-with-the-pattern-attribute--cms-25145
 
 https://siongui.github.io/2017/02/27/css-only-toggle-dom-element/
+
+metadata:
+	<meta name="author" content="@theemacsshibe">
+	<meta name="description" content="I think we're the computers now, since compiler writing is something everyone wants to do, yet no one makes them that smart.">
+	<meta property="og:url" content="http://txti.es/masochistprogramming">
+	<meta property="og:title" content="On Masochist Programming: or who's doing the computation now?">
+	<meta property="og:site_name" content="txti">
+	<meta property="og:description" content="I think we're the computers now, since compiler writing is something everyone wants to do, yet no one makes them that smart.">
+	<meta name="twitter:card" content="summary">
+	<meta name="twitter:title" content="On Masochist Programming: or who's doing the computation now?">
+	<meta name="twitter:description" content="I think we're the computers now, since compiler writing is something everyone wants to do, yet no one makes them that smart.">
+	<meta name="twitter:creator" content="@theemacsshibe">
+

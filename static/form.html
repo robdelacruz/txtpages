@@ -6,46 +6,42 @@
 <title>Form</title>
 <link rel="stylesheet" type="text/css" href="style.css">
 </head>
-<body class="dark">
+<body class="txtpage">
     <div class="titlebar header">
-        <p><a href="/">joti</a> - Fast text web pages</p>
-        <p><a href="/">about</a></p>
-        <p><a href="/">how to use</a></p>
+        <p><a href="/">TxtPages</a> - Create fast text web pages</p>
+        <p><a href="/">About</a></p>
+        <p><a href="/">How to use</a></p>
     </div>
     <h2>Create a webpage</h2>
-    <form class="jotiform" action="/submit/" method="post">
-		<div class="jotiform_error">
+    <form class="txtpage_form" action="/submit/" method="post">
+		<div class="txtpage_form_error">
             <p>Please fill in the missing fields.</p>
 		</div>
         <div>
             <label for="title">Title</label>
-            <input id="title" name="title" value="Title here">
-        </div>
-        <div>
-            <label for="title2">Title</label>
-            <input class="highlight" id="title2" name="title2" value="Title here">
+            <input class="highlight" id="title" name="title" value="Title here">
         </div>
         <div>
             <label for="content">Content</label>
-            <textarea id="content" name="content">
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-            </textarea>
+            <textarea id="content" name="content" rows="20">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</textarea>
         </div>
         <div>
-            <label for="content2">Content</label>
-            <textarea class="highlight" id="content2" name="content2">
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-            </textarea>
+            <label for="desc">Description <i>(optional)</i></label>
+            <textarea id="desc" name="desc" rows="3" maxlength="500"></textarea>
         </div>
         <div>
-            <label for="url">Set URL (optional)</label>
+            <label for="author">Author <i>(optional)</i></label>
+            <input id="author" name="author" value="">
+        </div>
+        <div>
+            <label for="url">Set URL <i>(optional)</i></label>
             <input id="url" name="url" value="">
         </div>
         <div>
-            <label for="passcode">Set Passcode (optional)</label>
+            <label for="passcode">Set Passcode <i>(optional)</i></label>
             <input id="passcode" name="passcode" value="">
         </div>
-        <div class="jotiform_save">
+        <div class="txtpage_form_save">
             <button type="button">Create</button>
         </div>
     </form>

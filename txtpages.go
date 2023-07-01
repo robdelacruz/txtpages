@@ -276,6 +276,8 @@ func (server *Server) new_handler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		tp.title = strings.TrimSpace(r.FormValue("title"))
 		tp.content = strings.TrimSpace(r.FormValue("content"))
+		tp.desc = strings.TrimSpace(r.FormValue("desc"))
+		tp.author = strings.TrimSpace(r.FormValue("author"))
 		tp.url = strings.TrimSpace(r.FormValue("url"))
 		tp.passcode = strings.TrimSpace(r.FormValue("passcode"))
 
@@ -325,6 +327,8 @@ func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, url s
 	if r.Method == "POST" {
 		tp.title = strings.TrimSpace(r.FormValue("title"))
 		tp.content = strings.TrimSpace(r.FormValue("content"))
+		tp.desc = strings.TrimSpace(r.FormValue("desc"))
+		tp.author = strings.TrimSpace(r.FormValue("author"))
 		tp.url = strings.TrimSpace(r.FormValue("url"))
 		passcode = strings.TrimSpace(r.FormValue("passcode"))
 
@@ -400,7 +404,9 @@ func print_txtpage(P PrintFunc, tp *TxtPage) {
 		return
 	}
 	print_page_header(P, tp.title, tp.url)
+	P("<article class=\"txtpage_content\">\n")
 	P("%s\n", html_str)
+	P("</article>\n")
 	print_footer(P)
 	html_print_close(P)
 }
@@ -417,9 +423,9 @@ func print_create_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalida
 	html_print_open(P, TXTPAGES_TITLE, TXTPAGES_TITLE, TXTPAGES_AUTHOR)
 	print_header(P)
 	P("<h2>Create a txtpage</h2>\n")
-	P("<form class=\"txtpageform\" method=\"post\" action=\"%s\">\n", actionpath)
+	P("<form class=\"txtpage_form\" method=\"post\" action=\"%s\">\n", actionpath)
 	if errmsg != "" {
-		P("    <div class=\"txtpageform_error\">\n")
+		P("    <div class=\"txtpage_form_error\">\n")
 		P("        <p>%s</p>\n", errmsg)
 		P("    </div>\n")
 	}
@@ -435,26 +441,34 @@ func print_create_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalida
 	P("    <div>\n")
 	if fvalidate && tp.content == "" {
 		P("        <label for=\"content\">Please enter Content</label>\n")
-		P("        <textarea id=\"content\" class=\"highlight\" autofocus name=\"content\">%s</textarea>\n", escape(tp.content))
+		P("        <textarea id=\"content\" name=\"content\" rows=\"20\" class=\"highlight\" autofocus>%s</textarea>\n", escape(tp.content))
 	} else {
 		P("        <label for=\"content\">Content</label>\n")
-		P("        <textarea id=\"content\" name=\"content\">%s</textarea>\n", escape(tp.content))
+		P("        <textarea id=\"content\" name=\"content\" rows=\"20\">%s</textarea>\n", escape(tp.content))
 	}
+	P("    </div>\n")
+	P("    <div>\n")
+	P("        <label for=\"desc\">Description <i>(optional)</i></label>\n")
+	P("        <textarea id=\"desc\" name=\"desc\" rows=\"3\">%s</textarea>\n", escape(tp.desc))
+	P("    </div>\n")
+	P("    <div>\n")
+	P("        <label for=\"author\">Author <i>(optional)</i></label>\n")
+	P("        <input id=\"author\" name=\"author\" value=\"%s\">\n", escape(tp.author))
 	P("    </div>\n")
 	P("    <div>\n")
 	if fvalidate && zresult == Z_URL_EXISTS {
 		P("        <label for=\"url\">URL already exists, enter another one</label>\n")
 		P("        <input id=\"url\" class=\"highlight\" name=\"url\" autofocus value=\"%s\">\n", escape(tp.url))
 	} else {
-		P("        <label for=\"url\">Set URL (optional)</label>\n")
+		P("        <label for=\"url\">Set URL <i>(optional)</i></label>\n")
 		P("        <input id=\"url\" name=\"url\" value=\"%s\">\n", escape(tp.url))
 	}
 	P("    </div>\n")
 	P("    <div>\n")
-	P("        <label for=\"passcode\">Set passcode (optional)</label>\n")
+	P("        <label for=\"passcode\">Set passcode <i>(optional)</i></label>\n")
 	P("        <input id=\"passcode\" name=\"passcode\" value=\"%s\">\n", escape(tp.passcode))
 	P("    </div>\n")
-	P("    <div class=\"txtpageform_save\">\n")
+	P("    <div class=\"txtpage_form_save\">\n")
 	P("        <button type=\"submit\">Create Page</button>\n")
 	P("    </div>\n")
 	P("</form>\n")
@@ -473,9 +487,9 @@ func print_edit_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalidate
 	html_print_open(P, "Edit txtpage", TXTPAGES_TITLE, TXTPAGES_AUTHOR)
 	print_header(P)
 	P("<h2>Edit txtpage</h2>\n")
-	P("<form class=\"txtpageform\" method=\"post\" action=\"%s\">\n", actionpath)
+	P("<form class=\"txtpage_form\" method=\"post\" action=\"%s\">\n", actionpath)
 	if errmsg != "" {
-		P("    <div class=\"txtpageform_error\">\n")
+		P("    <div class=\"txtpage_form_error\">\n")
 		P("        <p>%s</p>\n", errmsg)
 		P("    </div>\n")
 	}
@@ -491,11 +505,19 @@ func print_edit_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalidate
 	P("    <div>\n")
 	if fvalidate && tp.content == "" {
 		P("        <label for=\"content\">Please enter Content</label>\n")
-		P("        <textarea id=\"content\" class=\"highlight\" autofocus name=\"content\">%s</textarea>\n", escape(tp.content))
+		P("        <textarea id=\"content\" name=\"content\" rows=\"20\" class=\"highlight\" autofocus>%s</textarea>\n", escape(tp.content))
 	} else {
 		P("        <label for=\"content\">Content</label>\n")
-		P("        <textarea id=\"content\" name=\"content\">%s</textarea>\n", escape(tp.content))
+		P("        <textarea id=\"content\" name=\"content\" rows=\"20\">%s</textarea>\n", escape(tp.content))
 	}
+	P("    </div>\n")
+	P("    <div>\n")
+	P("        <label for=\"desc\">Description <i>(optional)</i></label>\n")
+	P("        <textarea id=\"desc\" name=\"desc\" rows=\"3\">%s</textarea>\n", escape(tp.desc))
+	P("    </div>\n")
+	P("    <div>\n")
+	P("        <label for=\"author\">Author <i>(optional)</i></label>\n")
+	P("        <input id=\"author\" name=\"author\" value=\"%s\">\n", escape(tp.author))
 	P("    </div>\n")
 	P("    <div>\n")
 	if fvalidate && zresult == Z_URL_EXISTS {
@@ -515,7 +537,7 @@ func print_edit_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalidate
 		P("        <input id=\"passcode\" name=\"passcode\" value=\"%s\">\n", escape(passcode))
 	}
 	P("    </div>\n")
-	P("    <div class=\"txtpageform_save\">\n")
+	P("    <div class=\"txtpage_form_save\">\n")
 	P("        <button type=\"submit\">Save Page</button>\n")
 	P("    </div>\n")
 	P("</form>\n")

@@ -38,7 +38,7 @@ blockquote, pre {
     a:visited { 
         color: #8e96f0
     }
-    .txtpageform_error {
+    .txtpage_form_error {
         color: black;
     }
     blockquote, pre {
@@ -74,37 +74,41 @@ input, textarea, button {
     margin: 50px 0;
     border-top: #444 1px solid;
 }
-.txtpageform {
+.txtpage_content {
+    min-height: 300px;
 }
-.txtpageform > div {
-    margin: 0.5rem 0;
+.txtpage_form {
 }
-.txtpageform label {
+.txtpage_form > div {
+    margin: 0.75rem 0;
+}
+.txtpage_form label {
     display: block;
 }
-.txtpageform input, .txtpageform textarea {
+.txtpage_form input, .txtpage_form textarea {
     display: block;
     width: 100%;
 }
-.txtpageform textarea {
-    height: 200px;
+.txtpage_form textarea {
+    1min-height: 200px;
+    max-height: 500px;
 }
-.txtpageform button {
+.txtpage_form button {
     padding: 0 1rem;
 }
-.txtpageform_save {
+.txtpage_form_save {
     padding: 1rem 0;
     text-align: center;
 }
-.txtpageform_save button {
+.txtpage_form_save button {
     font-weight: bold;
 }
-.txtpageform_error {
+.txtpage_form_error {
     padding: 1px 0;
     background-color: lightgray;
     text-align: center;
 }
-.txtpageform .highlight {
+.txtpage_form .highlight {
     border: 2px solid gold;
     border-radius: 7px;
     outline: none;

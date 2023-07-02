@@ -112,3 +112,5 @@ HtmlMeta struct {
 nice color scheme:
 https://veonr.com/blog/relative-vs-absolute-og-image-video-urls
 
+https://developers.facebook.com/tools/debug/
+

@@ -109,10 +109,23 @@ Initialize db file:
 	server := Server{db, &cfg}
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	http.HandleFunc("/", server.index_handler)
+	http.HandleFunc("/test", test_handler)
 
 	fmt.Printf("Listening on %s...\n", cfg.port)
 	err = http.ListenAndServe(fmt.Sprintf(":%s", cfg.port), nil)
 	log.Fatal(err)
+}
+
+func test_handler(w http.ResponseWriter, r *http.Request) {
+	P := makePrintFunc(w)
+
+	html_print_open(P, r.Host, &HtmlMeta{})
+
+	P("r.URL.RequestURI(): '%s'<br>\n", r.URL.RequestURI())
+	P("r.URL: '%s'<br>\n", r.URL)
+	P("r.Host: '%s'<br>\n", r.Host)
+
+	html_print_close(P)
 }
 
 func parse_args(args []string, cfg *Config) {
@@ -233,27 +246,27 @@ func (server *Server) page_handler(w http.ResponseWriter, r *http.Request, url s
 	// Show stock page if exists.
 	sp := match_stock_page(url, stock_pages)
 	if sp != nil {
-		print_stock_page(P, sp)
+		print_stock_page(P, r.Host, sp)
 		return
 	}
 
 	z = find_txtpage_by_url(server.db, url, &tp)
 	if z == Z_NOT_FOUND {
-		html_print_open(P, "Not Found", "", "")
+		html_print_open(P, r.Host, &HtmlMeta{title: "TxtPage Not Found"})
 		print_header(P)
 		P("<p>Page not found: %s</p>\n", url)
 		html_print_close(P)
 		return
 	}
 	if z != Z_OK {
-		html_print_open(P, "Error", "", "")
+		html_print_open(P, r.Host, &HtmlMeta{title: "TxtPage Error"})
 		print_header(P)
 		P("<p>Error retrieving txtpage: %s</p>\n", z.Error())
 		html_print_close(P)
 		return
 	}
 	touch_txtpage_by_url(server.db, tp.url)
-	print_txtpage(P, &tp)
+	print_txtpage(P, r.Host, &tp)
 }
 
 func match_stock_page(url string, ss []StockPage) *StockPage {
@@ -291,12 +304,12 @@ func (server *Server) new_handler(w http.ResponseWriter, r *http.Request) {
 				fvalidate = true
 				break
 			}
-			print_save_page_success(P, &tp, r)
+			print_save_page_success(P, r.Host, &tp, r)
 			return
 		}
 	}
 
-	print_create_page_form(P, &tp, r.URL.Path, fvalidate, z)
+	print_create_page_form(P, r.Host, &tp, r.URL.Path, fvalidate, z)
 }
 
 func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, url string) {
@@ -310,14 +323,14 @@ func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, url s
 
 	z = find_txtpage_by_url(server.db, url, &tp)
 	if z == Z_NOT_FOUND {
-		html_print_open(P, "Not Found", "", "")
+		html_print_open(P, r.Host, &HtmlMeta{title: "TxtPage Not Found"})
 		print_header(P)
 		P("<p>Page not found</p>\n")
 		html_print_close(P)
 		return
 	}
 	if z != Z_OK {
-		html_print_open(P, "Error", "", "")
+		html_print_open(P, r.Host, &HtmlMeta{title: "TxtPage Error"})
 		print_header(P)
 		P("<p>Error retrieving txtpage: %s</p>\n", z.Error())
 		html_print_close(P)
@@ -342,12 +355,12 @@ func (server *Server) edit_handler(w http.ResponseWriter, r *http.Request, url s
 				fvalidate = true
 				break
 			}
-			print_save_page_success(P, &tp, r)
+			print_save_page_success(P, r.Host, &tp, r)
 			return
 		}
 	}
 
-	print_edit_page_form(P, &tp, r.URL.Path, fvalidate, z, passcode)
+	print_edit_page_form(P, r.Host, &tp, r.URL.Path, fvalidate, z, passcode)
 }
 
 // print_titlebar(P, "header", "/", "home", "/", "about")
@@ -383,19 +396,30 @@ func print_page_header(P PrintFunc, title string, url string) {
 	P("</div>\n")
 }
 
-func print_stock_page(P PrintFunc, sp *StockPage) {
-	html_print_open(P, sp.title, sp.desc, TXTPAGES_AUTHOR)
+func print_stock_page(P PrintFunc, host string, sp *StockPage) {
+	m := HtmlMeta{
+		title:       sp.title,
+		description: sp.desc,
+		author:      TXTPAGES_AUTHOR,
+	}
+	html_print_open(P, host, &m)
 	P("%s\n", sp.html)
 	print_footer(P)
 	html_print_close(P)
 }
 
-func print_txtpage(P PrintFunc, tp *TxtPage) {
+func print_txtpage(P PrintFunc, host string, tp *TxtPage) {
 	desc := tp.desc
 	if desc == "" {
 		desc = content_to_desc(tp.content)
 	}
-	html_print_open(P, tp.title, desc, tp.author)
+	m := HtmlMeta{
+		title:       tp.title,
+		description: desc,
+		author:      tp.author,
+		image_urls:  get_image_urls(tp.content),
+	}
+	html_print_open(P, host, &m)
 	html_str, err := md_to_html(nil, []byte(tp.content))
 	if err != nil {
 		print_header(P)
@@ -411,7 +435,28 @@ func print_txtpage(P PrintFunc, tp *TxtPage) {
 	html_print_close(P)
 }
 
-func print_create_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalidate bool, zresult Z) {
+// Extract all image urls from markdown string.
+// Markdown image format: ![alt text](link)
+func get_image_urls(md string) []string {
+	re := regexp.MustCompile("!\\[.*\\]\\((.+)\\)")
+	matches := re.FindAllStringSubmatch(md, -1)
+
+	if matches == nil {
+		return nil
+	}
+	urls := []string{}
+	for _, ss := range matches {
+		// ss[0] = match of regex
+		// ss[1] = submatch
+		if len(ss) <= 1 {
+			continue
+		}
+		urls = append(urls, ss[1])
+	}
+	return urls
+}
+
+func print_create_page_form(P PrintFunc, host string, tp *TxtPage, actionpath string, fvalidate bool, zresult Z) {
 	var errmsg string
 
 	if fvalidate {
@@ -420,7 +465,12 @@ func print_create_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalida
 		}
 	}
 
-	html_print_open(P, TXTPAGES_TITLE, TXTPAGES_TITLE, TXTPAGES_AUTHOR)
+	m := HtmlMeta{
+		title:       TXTPAGES_TITLE,
+		description: TXTPAGES_TITLE,
+		author:      TXTPAGES_AUTHOR,
+	}
+	html_print_open(P, host, &m)
 	print_header(P)
 	P("<h2>Create a txtpage</h2>\n")
 	P("<form class=\"txtpage_form\" method=\"post\" action=\"%s\">\n", actionpath)
@@ -475,7 +525,7 @@ func print_create_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalida
 	html_print_close(P)
 }
 
-func print_edit_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalidate bool, zresult Z, passcode string) {
+func print_edit_page_form(P PrintFunc, host string, tp *TxtPage, actionpath string, fvalidate bool, zresult Z, passcode string) {
 	var errmsg string
 
 	if fvalidate {
@@ -484,7 +534,12 @@ func print_edit_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalidate
 		}
 	}
 
-	html_print_open(P, "Edit txtpage", TXTPAGES_TITLE, TXTPAGES_AUTHOR)
+	m := HtmlMeta{
+		title:       "Edit txtpage",
+		description: TXTPAGES_TITLE,
+		author:      TXTPAGES_AUTHOR,
+	}
+	html_print_open(P, host, &m)
 	print_header(P)
 	P("<h2>Edit txtpage</h2>\n")
 	P("<form class=\"txtpage_form\" method=\"post\" action=\"%s\">\n", actionpath)
@@ -544,14 +599,14 @@ func print_edit_page_form(P PrintFunc, tp *TxtPage, actionpath string, fvalidate
 	html_print_close(P)
 }
 
-func print_save_page_success(P PrintFunc, tp *TxtPage, r *http.Request) {
+func print_save_page_success(P PrintFunc, host string, tp *TxtPage, r *http.Request) {
 	href_link := fmt.Sprintf("/%s", tp.url)
 	edit_href_link := fmt.Sprintf("/%s/edit", tp.url)
 
 	page_name := fmt.Sprintf("%s/%s", r.Host, tp.url)
 	edit_page_name := fmt.Sprintf("%s/%s/edit", r.Host, tp.url)
 
-	html_print_open(P, "TxtPage Success", "", "")
+	html_print_open(P, host, &HtmlMeta{title: "TxtPage Success"})
 	P("<h2>TxtPage created!</h2>\n")
 	P("<p>Link to your txtpage:<br>\n")
 	P("<a href=\"%s\">%s</a></p>", href_link, page_name)

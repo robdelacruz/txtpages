@@ -45,15 +45,70 @@ https://webdesign.tutsplus.com/tutorials/html5-form-validation-with-the-pattern-
 
 https://siongui.github.io/2017/02/27/css-only-toggle-dom-element/
 
+https://ahrefs.com/blog/open-graph-meta-tags/
+
 metadata:
 	<meta name="author" content="@theemacsshibe">
 	<meta name="description" content="I think we're the computers now, since compiler writing is something everyone wants to do, yet no one makes them that smart.">
+
 	<meta property="og:url" content="http://txti.es/masochistprogramming">
 	<meta property="og:title" content="On Masochist Programming: or who's doing the computation now?">
 	<meta property="og:site_name" content="txti">
 	<meta property="og:description" content="I think we're the computers now, since compiler writing is something everyone wants to do, yet no one makes them that smart.">
+
 	<meta name="twitter:card" content="summary">
 	<meta name="twitter:title" content="On Masochist Programming: or who's doing the computation now?">
 	<meta name="twitter:description" content="I think we're the computers now, since compiler writing is something everyone wants to do, yet no one makes them that smart.">
 	<meta name="twitter:creator" content="@theemacsshibe">
+
+other tags:
+    <meta name="twitter:image" content="http://abc.com/image.jpg">
+
+twitter tags
+------------
+twitter:card content="summary" content="summary_large_image"
+twitter:site content="@nytimes" (website attribution)
+twitter:creator content="@robcomputing"
+twitter:title
+twitter:description
+twitter:image
+
+og tags
+-------
+og:title
+og:description
+og:type content="website" "article"
+og:url
+og:image (can have multile og:image)
+og:site_name content="txtpages"
+
+what to use
+-----------
+head <title>
+meta name="description"
+meta name="author"
+
+meta property="og:type" content="website"
+meta property="og:title"
+meta property="og:description"
+meta property="og:url"
+meta property="og:image" (if present)
+meta property="og:site_name" content="txtpages"
+
+meta name="twitter:card" content="summary"
+meta name="twitter:title"
+meta name="twitter:description"
+meta name="twitter:creator"
+meta name="twitter:image" (if present)
+
+HtmlMeta struct {
+    title
+    description
+    author
+    url
+    image_urls []string
+}
+
+nice color scheme:
+https://veonr.com/blog/relative-vs-absolute-og-image-video-urls
 

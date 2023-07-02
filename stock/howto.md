@@ -9,6 +9,8 @@ A guide to creating a txtpage.
 [Creating a heading](#creating-a-heading)  
 [Formatting paragraphs](#formatting-paragraphs)  
 [Formatting text](#formatting-text)  
+[Adding web links](#adding-web-links)  
+[Linking to an image](#linking-to-an-image)  
 [Creating a list](#creating-a-list)  
 [Deleting old txtpages](#deleting-old-txtpages))  
 

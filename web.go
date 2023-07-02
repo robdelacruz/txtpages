@@ -90,7 +90,7 @@ func logErr(sfunc string, err error) {
 // *** HTML template functions ***
 func html_print_open(P PrintFunc, host string, m *HtmlMeta) {
 	title := m.title
-	if title != "" {
+	if title == "" {
 		title = "txtpages page"
 	}
 

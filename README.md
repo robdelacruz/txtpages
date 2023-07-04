@@ -20,8 +20,8 @@ TxtPages uses a single sqlitie3 database file to store all txtpages.
 
 ## Screenshots
 
-![create txtpage](screenshots/create_txtpage.png)
-![view_txtpage](screenshots/view_txtpage.png)
+![create txtpage](screenshots/create_txtpage_light.png)
+![view_txtpage](screenshots/view_txtpage_light.png)
 
 ## Contact
 

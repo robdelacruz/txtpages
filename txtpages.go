@@ -108,24 +108,12 @@ Initialize db file:
 	rand.Seed(time.Now().UnixNano())
 	server := Server{db, &cfg}
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	http.HandleFunc("/$$$", server.admin_handler)
 	http.HandleFunc("/", server.index_handler)
-	http.HandleFunc("/test", test_handler)
 
 	fmt.Printf("Listening on %s...\n", cfg.port)
 	err = http.ListenAndServe(fmt.Sprintf(":%s", cfg.port), nil)
 	log.Fatal(err)
-}
-
-func test_handler(w http.ResponseWriter, r *http.Request) {
-	P := makePrintFunc(w)
-
-	html_print_open(P, r.Host, &HtmlMeta{})
-
-	P("r.URL.RequestURI(): '%s'<br>\n", r.URL.RequestURI())
-	P("r.URL: '%s'<br>\n", r.URL)
-	P("r.Host: '%s'<br>\n", r.Host)
-
-	html_print_close(P)
 }
 
 func parse_args(args []string, cfg *Config) {
@@ -216,6 +204,28 @@ func load_stock_pages() []StockPage {
 	return pp
 }
 
+func (server *Server) admin_handler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	P := makePrintFunc(w)
+
+	tt, z := find_all_txtpage_orderby_createdt(server.db)
+	if z != Z_OK {
+		html_print_open(P, r.Host, &HtmlMeta{title: "DB error"})
+		print_header(P)
+		P("<p>DB error</p>\n")
+		html_print_close(P)
+		return
+	}
+	html_print_open(P, r.Host, &HtmlMeta{title: "Page list"})
+	print_header(P)
+	P("<p>\n")
+	for _, t := range tt {
+		P("<a href=\"/%s\">%s</a><br>\n", t.url, t.title)
+	}
+	P("</p>\n")
+	html_print_close(P)
+}
+
 func (server *Server) index_handler(w http.ResponseWriter, r *http.Request) {
 	var url string
 	var action string
@@ -276,6 +286,13 @@ func match_stock_page(url string, ss []StockPage) *StockPage {
 		}
 	}
 	return nil
+}
+
+func is_url_allowed(url string) bool {
+	if url == "$$$" || url == "static" {
+		return false
+	}
+	return true
 }
 
 func (server *Server) new_handler(w http.ResponseWriter, r *http.Request) {

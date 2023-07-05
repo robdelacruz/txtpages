@@ -23,6 +23,8 @@ type TxtPage struct {
 	lastreaddt string
 }
 
+type TxtPages []*TxtPage
+
 type Z int
 
 const (
@@ -137,6 +139,28 @@ func find_txtpage_by_url(db *sql.DB, url string, tp *TxtPage) Z {
 	}
 	return Z_OK
 }
+func find_all_txtpage_orderby_createdt(db *sql.DB) (TxtPages, Z) {
+	s := "SELECT txtpage_id, title, url, content, desc, author, passcode, createdt, lastreaddt FROM txtpage ORDER BY createdt DESC"
+	rows, err := db.Query(s)
+	if err != nil {
+		logerr("find_all_txtpage_orderby_createdt", err)
+		return nil, Z_DBERR
+	}
+	defer rows.Close()
+
+	tt := TxtPages{}
+	for rows.Next() {
+		var tp TxtPage
+		err := rows.Scan(&tp.txtpage_id, &tp.title, &tp.url, &tp.content, &tp.desc, &tp.author, &tp.passcode, &tp.createdt, &tp.lastreaddt)
+		if err != nil {
+			logerr("find_all_txtpage_orderby_createdt", err)
+			return nil, Z_DBERR
+		}
+
+		tt = append(tt, &tp)
+	}
+	return tt, Z_OK
+}
 
 func random_passcode() string {
 	return edit_words[rand.Intn(len(edit_words))]
@@ -162,7 +186,7 @@ func create_txtpage(db *sql.DB, tp *TxtPage) Z {
 	if tp.url != "" {
 		tp.url = sanitize_txtpage_url(tp.url)
 	}
-	if tp.url != "" && txtpage_url_exists(db, tp.url, 0) {
+	if tp.url != "" && (!is_url_allowed(tp.url) || txtpage_url_exists(db, tp.url, 0)) {
 		return Z_URL_EXISTS
 	}
 	if match_stock_page(tp.url, stock_pages) != nil {
@@ -219,7 +243,7 @@ func edit_txtpage(db *sql.DB, tp *TxtPage, passcode string) Z {
 	if tp.url != "" {
 		tp.url = sanitize_txtpage_url(tp.url)
 	}
-	if tp.url != "" && txtpage_url_exists(db, tp.url, tp.txtpage_id) {
+	if tp.url != "" && (!is_url_allowed(tp.url) || txtpage_url_exists(db, tp.url, tp.txtpage_id)) {
 		return Z_URL_EXISTS
 	}
 	if match_stock_page(tp.url, stock_pages) != nil {

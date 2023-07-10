@@ -7,12 +7,11 @@ A guide to creating a txtpage.
 [Specifying a passcode](#specifying-a-passcode-for-your-txtpage)  
 [Editing an existing txtpage](#editing-an-existing-txtpage)  
 [Creating a heading](#creating-a-heading)  
-[Formatting paragraphs](#formatting-paragraphs)  
 [Formatting text](#formatting-text)  
 [Adding web links](#adding-web-links)  
 [Linking to an image](#linking-to-an-image)  
 [Creating a list](#creating-a-list)  
-[Deleting old txtpages](#deleting-old-txtpages))  
+[Deleting old txtpages](#deleting-old-txtpages)  
 
 &nbsp;
 
@@ -71,14 +70,6 @@ To create a heading, use the following formatting:
 
 &nbsp;
 
-## Formatting paragraphs
-
-Leave an empty line in between paragraphs.
-
-To start a new line (without starting a new paragraph), add two spaces at the end of the line.
-
-&nbsp;
-
 ## Formatting text
 
 Enclose text in asterisks for italic or bold text.
@@ -88,7 +79,7 @@ Enclose text in asterisks for italic or bold text.
 **bold text**.
 ```
 
-Enclose text in backticks (`) for `code` text.
+Enclose text in backticks (\`) for `code` text.
 
 ```
 Here's some `code text` for you.
@@ -100,7 +91,6 @@ Use three dashes (---) on a line by itself for a horizontal rule.
 A line of text followed by a horizontal rule.
 
 ---
-
 ```
 
 Add a '>' in front of a paragraph to turn it into a blockquote.
@@ -140,6 +130,8 @@ Use the following to link to an image:
 ```
 ![image alt text](http://txtpages.xyz/logo.png)  
 ```
+
+You can use a free image hosting site such as [imgur](https://imgur.com/) to upload images, then link to it from TxtPages.
 
 &nbsp;
 

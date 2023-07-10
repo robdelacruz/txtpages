@@ -26,6 +26,7 @@ img {
 blockquote, pre {
     margin: 0;
     padding: 10px 10px;
+    overflow-x: auto;
 }
 @media (prefers-color-scheme: dark) {
     body {
@@ -42,8 +43,8 @@ blockquote, pre {
         color: black;
     }
     blockquote, pre {
+        /*background: rgb(55,65,81);*/
         background: rgb(31,41,55);
-        1background: rgb(55,65,81);
     }
     input, textarea, button {
         background: rgb(8, 36, 55); 

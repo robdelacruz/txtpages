@@ -114,5 +114,5 @@ https://developers.facebook.com/tools/debug/
 nice color scheme:
 https://veonr.com/blog/relative-vs-absolute-og-image-video-urls
 https://when-then-zen.christine.website/intro
-
+https://ericmurphy.xyz/blog/minimalist-web/
 

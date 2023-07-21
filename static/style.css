@@ -86,6 +86,7 @@ input, textarea, button {
     min-height: 300px;
 }
 .txtpage_form {
+    font-size: 12px;
 }
 .txtpage_form > div {
     margin: 0.75rem 0;
